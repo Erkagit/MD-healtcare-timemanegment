@@ -1,26 +1,8 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "builds": [
-    {
-      "src": "apps/web/package.json",
-      "use": "@vercel/next"
-    },
-    {
-      "src": "apps/admin/package.json",
-      "use": "@vercel/next"
-    },
-    {
-      "src": "apps/api/package.json",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["apps/api/prisma/**"]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "apps/api/src/index.ts"
-    }
-  ]
+  "framework": "nextjs",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "cd apps/admin && pnpm build",
+  "outputDirectory": "apps/admin/.next"
 }

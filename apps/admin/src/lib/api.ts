@@ -1,6 +1,8 @@
 // Admin API Client
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
+console.log('[API] Using API_URL:', API_URL);
+
 // Get token from localStorage (client-side only)
 const getToken = () => {
   if (typeof window !== 'undefined') {
@@ -15,23 +17,31 @@ async function fetchAPI<T>(
   options?: RequestInit
 ): Promise<T> {
   const token = getToken();
+  const url = `${API_URL}${endpoint}`;
   
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options?.headers,
-    },
-  });
+  console.log('[API] Fetching:', url);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options?.headers,
+      },
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data.error || 'API request failed');
+    if (!response.ok) {
+      throw new Error(data.error || 'API request failed');
+    }
+
+    return data;
+  } catch (err) {
+    console.error('[API] Error:', err);
+    throw err;
   }
-
-  return data;
 }
 
 // Auth APIs
@@ -116,6 +126,57 @@ export const appointmentsAPI = {
     fetchAPI<{ success: boolean; data: AppointmentWithDetails }>(`/appointments/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
+    }),
+
+  getByDateRange: (startDate: string, endDate: string, doctorId?: string) => {
+    const query = new URLSearchParams();
+    query.set('startDate', startDate);
+    query.set('endDate', endDate);
+    if (doctorId) query.set('doctorId', doctorId);
+    return fetchAPI<{ success: boolean; data: AppointmentWithDetails[] }>(`/appointments/range?${query.toString()}`);
+  },
+};
+
+// Services APIs
+export const servicesAPI = {
+  getCategories: () =>
+    fetchAPI<ServiceCategory[]>('/services/categories'),
+
+  getAll: () =>
+    fetchAPI<Service[]>('/services'),
+
+  createCategory: (data: CreateCategoryInput) =>
+    fetchAPI<ServiceCategory>('/services/categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateCategory: (id: string, data: UpdateCategoryInput) =>
+    fetchAPI<ServiceCategory>(`/services/categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteCategory: (id: string) =>
+    fetchAPI<{ message: string }>(`/services/categories/${id}`, {
+      method: 'DELETE',
+    }),
+
+  createService: (data: CreateServiceInput) =>
+    fetchAPI<Service>('/services', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateService: (id: string, data: UpdateServiceInput) =>
+    fetchAPI<Service>(`/services/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteService: (id: string) =>
+    fetchAPI<{ message: string }>(`/services/${id}`, {
+      method: 'DELETE',
     }),
 };
 
@@ -217,4 +278,61 @@ export interface AppointmentFilters {
   status?: string;
   page?: number;
   limit?: number;
+}
+
+// Service Types
+export interface ServiceCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  order: number;
+  isActive: boolean;
+  services?: Service[];
+}
+
+export interface Service {
+  id: string;
+  name: string;
+  description: string | null;
+  categoryId: string;
+  duration: number;
+  price: number | null;
+  isActive: boolean;
+  order: number;
+  category?: ServiceCategory;
+}
+
+export interface CreateCategoryInput {
+  name: string;
+  description?: string;
+  icon?: string;
+  order?: number;
+}
+
+export interface UpdateCategoryInput {
+  name?: string;
+  description?: string;
+  icon?: string;
+  order?: number;
+  isActive?: boolean;
+}
+
+export interface CreateServiceInput {
+  name: string;
+  description?: string;
+  categoryId: string;
+  duration?: number;
+  price?: number;
+  order?: number;
+}
+
+export interface UpdateServiceInput {
+  name?: string;
+  description?: string;
+  categoryId?: string;
+  duration?: number;
+  price?: number;
+  order?: number;
+  isActive?: boolean;
 }

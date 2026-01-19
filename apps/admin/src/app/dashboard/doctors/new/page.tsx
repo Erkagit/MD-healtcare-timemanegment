@@ -47,11 +47,11 @@ export default function NewDoctorPage() {
   };
 
   return (
-    <div>
-      <div className="mb-6">
+    <div className="space-y-6">
+      <div>
         <button
           onClick={() => router.back()}
-          className="text-gray-600 hover:text-gray-900 flex items-center"
+          className="text-gray-500 hover:text-brand-600 flex items-center transition-colors"
         >
           <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -61,18 +61,24 @@ export default function NewDoctorPage() {
       </div>
 
       <div className="max-w-2xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Шинэ эмч бүртгэх</h1>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Шинэ эмч бүртгэх</h1>
+          <p className="text-gray-500 mt-1">Эмчийн мэдээллийг оруулна уу</p>
+        </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-card shadow-card p-6">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 flex items-center gap-3">
+              <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Эмчийн нэр *
               </label>
               <input
@@ -81,19 +87,19 @@ export default function NewDoctorPage() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Овог Нэр"
                 required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="input"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Мэргэжил *
               </label>
               <select
                 value={formData.specialization}
                 onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                 required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="input"
               >
                 <option value="">Сонгоно уу</option>
                 {SPECIALIZATIONS.map((spec) => (
@@ -105,7 +111,7 @@ export default function NewDoctorPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Танилцуулга
               </label>
               <textarea
@@ -113,22 +119,22 @@ export default function NewDoctorPage() {
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 placeholder="Эмчийн товч танилцуулга..."
                 rows={4}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="input resize-none"
               />
             </div>
 
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+                className="btn-secondary"
               >
                 Цуцлах
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                className="btn-primary"
               >
                 {loading ? (
                   <>

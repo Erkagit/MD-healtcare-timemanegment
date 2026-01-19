@@ -144,7 +144,7 @@ router.post(
       });
 
       // Create or update schedules
-      const results = [];
+      const results: any[] = [];
       for (const item of schedules) {
         const schedule = await prisma.schedule.upsert({
           where: {

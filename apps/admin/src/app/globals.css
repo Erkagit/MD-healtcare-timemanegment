@@ -2,12 +2,170 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================
+   MD HEALTH CARE - ADMIN DESIGN SYSTEM
+   Consistent with public website
+   ========================================== */
+
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-rgb: 249, 250, 251;
+  /* Brand Colors */
+  --brand-50: #fdf2f8;
+  --brand-100: #fce7f3;
+  --brand-500: #ec4899;
+  --brand-600: #db2777;
+  --brand-700: #be185d;
+  
+  /* Surface Colors */
+  --surface-bg: #fafafa;
+  --surface-card: #ffffff;
+  --surface-hover: #f5f5f5;
+  
+  /* Text Colors */
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  
+  /* Spacing */
+  --sidebar-width: 280px;
+  --header-height: 64px;
 }
 
+/* Base Styles */
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  color: var(--text-primary);
+  background: var(--surface-bg);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* Custom Scrollbar - Matches public site */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Component Classes */
+@layer components {
+  /* Card styles */
+  .card {
+    @apply bg-white rounded-2xl shadow-sm;
+  }
+  
+  .card-hover {
+    @apply transition-shadow hover:shadow-md;
+  }
+  
+  /* Status badge base */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold;
+  }
+  
+  .badge-pending {
+    @apply bg-amber-50 text-amber-700 border border-amber-200;
+  }
+  
+  .badge-confirmed {
+    @apply bg-emerald-50 text-emerald-700 border border-emerald-200;
+  }
+  
+  .badge-cancelled {
+    @apply bg-red-50 text-red-700 border border-red-200;
+  }
+  
+  .badge-completed {
+    @apply bg-slate-100 text-slate-600 border border-slate-200;
+  }
+
+  .badge-success {
+    @apply bg-emerald-50 text-emerald-700 border border-emerald-200;
+  }
+
+  .badge-default {
+    @apply bg-gray-100 text-gray-600 border border-gray-200;
+  }
+  
+  /* Button styles matching public site */
+  .btn-primary {
+    @apply inline-flex items-center justify-center font-medium transition-all duration-200;
+    @apply bg-pink-600 text-white hover:bg-pink-700 active:bg-pink-800 rounded-xl px-5 py-2.5;
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center justify-center font-medium transition-all duration-200;
+    @apply bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 rounded-xl px-5 py-2.5;
+  }
+  
+  .btn-ghost {
+    @apply inline-flex items-center justify-center font-medium transition-all duration-200;
+    @apply text-gray-600 hover:bg-gray-100 rounded-xl px-4 py-2;
+  }
+
+  /* Input styles */
+  .input {
+    @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-900;
+    @apply placeholder:text-gray-400 transition-colors duration-200;
+    @apply focus:border-pink-400 focus:ring-2 focus:ring-pink-500/20 focus:outline-none;
+  }
+  
+  /* Table styles */
+  .table-header {
+    @apply bg-gray-50/80 sticky top-0 z-10;
+  }
+  
+  .table-row {
+    @apply border-b border-gray-100 hover:bg-gray-50/50 transition-colors;
+  }
+}
+
+/* Animation Classes */
+@keyframes animateIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-in {
+  animation: animateIn 0.2s ease-out;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.15s ease-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.2s ease-out;
 }

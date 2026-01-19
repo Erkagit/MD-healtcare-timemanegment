@@ -7,8 +7,10 @@
     "moduleResolution": "node",
     "noEmit": false,
     "esModuleInterop": true,
-    "declaration": true,
-    "declarationMap": true
+    "declaration": false,
+    "declarationMap": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

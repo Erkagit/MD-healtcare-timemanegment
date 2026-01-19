@@ -11,7 +11,11 @@
     "db:migrate": "cd apps/api && npx prisma migrate dev",
     "db:push": "cd apps/api && npx prisma db push",
     "db:seed": "cd apps/api && npx prisma db seed",
-    "db:studio": "cd apps/api && npx prisma studio"
+    "db:studio": "cd apps/api && npx prisma studio",
+    "vercel-build": "turbo run build --filter=@repo/web --force"
+  },
+  "dependencies": {
+    "next": "^14.1.0"
   },
   "devDependencies": {
     "turbo": "^2.0.0",

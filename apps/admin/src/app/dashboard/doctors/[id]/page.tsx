@@ -73,17 +73,17 @@ export default function EditDoctorPage({ params }: { params: { id: string } }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-4 border-brand-600 border-t-transparent rounded-full" />
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="mb-6">
+    <div className="space-y-6">
+      <div>
         <button
           onClick={() => router.back()}
-          className="text-gray-600 hover:text-gray-900 flex items-center"
+          className="text-gray-500 hover:text-brand-600 flex items-center transition-colors"
         >
           <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -93,18 +93,24 @@ export default function EditDoctorPage({ params }: { params: { id: string } }) {
       </div>
 
       <div className="max-w-2xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Эмч засварлах</h1>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Эмч засварлах</h1>
+          <p className="text-gray-500 mt-1">Эмчийн мэдээллийг шинэчлэх</p>
+        </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-card shadow-card p-6">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 flex items-center gap-3">
+              <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Эмчийн нэр *
               </label>
               <input
@@ -112,19 +118,19 @@ export default function EditDoctorPage({ params }: { params: { id: string } }) {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="input"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Мэргэжил *
               </label>
               <select
                 value={formData.specialization}
                 onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                 required
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="input"
               >
                 <option value="">Сонгоно уу</option>
                 {SPECIALIZATIONS.map((spec) => (
@@ -136,42 +142,43 @@ export default function EditDoctorPage({ params }: { params: { id: string } }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Танилцуулга
               </label>
               <textarea
                 value={formData.bio}
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 rows={4}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="input resize-none"
               />
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-center gap-3 p-4 bg-surface-50 rounded-xl">
               <input
                 type="checkbox"
                 id="isActive"
                 checked={formData.isActive}
                 onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-5 w-5 text-brand-600 focus:ring-brand-500 border-gray-300 rounded transition-colors"
               />
-              <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
-                Идэвхтэй
+              <label htmlFor="isActive" className="text-sm text-gray-700 select-none cursor-pointer">
+                <span className="font-medium">Идэвхтэй</span>
+                <span className="text-gray-500 ml-1">- Үйлчлүүлэгчид цаг захиалах боломжтой</span>
               </label>
             </div>
 
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+                className="btn-secondary"
               >
                 Цуцлах
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                className="btn-primary"
               >
                 {saving ? (
                   <>

@@ -211,6 +211,60 @@ router.get(
 );
 
 // ==========================================
+// GET /api/appointments/range - Get appointments by date range (Admin)
+// ==========================================
+router.get(
+  '/range',
+  authenticateAdmin,
+  [
+    query('startDate').isISO8601().withMessage('Эхлэх огноо шаардлагатай'),
+    query('endDate').isISO8601().withMessage('Дуусах огноо шаардлагатай'),
+    query('doctorId').optional(),
+    query('status').optional(),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        throw new AppError(errors.array()[0].msg, 400);
+      }
+
+      const { startDate, endDate, doctorId, status } = req.query;
+
+      const where: Record<string, unknown> = {
+        date: {
+          gte: new Date(startDate as string),
+          lte: new Date(endDate as string),
+        },
+      };
+
+      if (doctorId) {
+        where.doctorId = doctorId;
+      }
+      if (status) {
+        where.status = status;
+      }
+
+      const appointments = await prisma.appointment.findMany({
+        where,
+        include: {
+          patient: true,
+          doctor: true,
+        },
+        orderBy: [{ date: 'asc' }, { time: 'asc' }],
+      });
+
+      res.json({
+        success: true,
+        data: appointments,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ==========================================
 // GET /api/appointments/my - Patient's appointments
 // ==========================================
 router.get('/my', authenticatePatient, async (req, res, next) => {

@@ -132,6 +132,22 @@ router.put('/categories/:id', authenticateAdmin, async (req: Request, res: Respo
   }
 });
 
+// DELETE /api/services/categories/:id - Delete category (Admin)
+router.delete('/categories/:id', authenticateAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.serviceCategory.delete({
+      where: { id },
+    });
+
+    res.json({ message: 'Ангилал устгагдлаа' });
+  } catch (error) {
+    console.error('Delete category error:', error);
+    res.status(500).json({ message: 'Серверийн алдаа' });
+  }
+});
+
 // POST /api/services - Create service (Admin)
 router.post('/', authenticateAdmin, async (req: Request, res: Response) => {
   try {

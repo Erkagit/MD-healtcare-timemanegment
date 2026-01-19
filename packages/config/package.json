@@ -1,7 +1,12 @@
 {
-  "name": "@repo/config",
+  "name": "@clinic/config",
   "version": "1.0.0",
   "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./tailwind.config": "./tailwind.config.js",
+    "./eslint-base": "./eslint-base.js"
+  },
   "scripts": {
     "lint": "eslint ."
   }
