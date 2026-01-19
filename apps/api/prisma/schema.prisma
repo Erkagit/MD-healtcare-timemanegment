@@ -1,0 +1,186 @@
+// ==========================================
+// PRISMA SCHEMA - MD HEALTH CARE CENTER
+// ==========================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Patient/User Model
+model Patient {
+  id           String        @id @default(cuid())
+  name         String
+  phone        String        @unique
+  email        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  appointments Appointment[]
+
+  @@index([phone])
+  @@map("patients")
+}
+
+// Admin Model (Clinic Staff)
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("admin") // admin, receptionist
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@map("admins")
+}
+
+// Service Category Model
+model ServiceCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  icon        String?
+  order       Int       @default(0)
+  isActive    Boolean   @default(true)
+  services    Service[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("service_categories")
+}
+
+// Service Model
+model Service {
+  id           String          @id @default(cuid())
+  name         String
+  description  String?         @db.Text
+  categoryId   String
+  duration     Int             @default(30) // minutes
+  price        Int?            // in MNT
+  isActive     Boolean         @default(true)
+  order        Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  category     ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+  doctors      DoctorService[]
+
+  @@index([categoryId])
+  @@map("services")
+}
+
+// Doctor Model
+model Doctor {
+  id             String          @id @default(cuid())
+  name           String
+  specialization String
+  bio            String?         @db.Text
+  imageUrl       String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  schedules      Schedule[]
+  appointments   Appointment[]
+  services       DoctorService[]
+
+  @@index([specialization])
+  @@index([isActive])
+  @@map("doctors")
+}
+
+// Doctor-Service relation (which doctor can perform which services)
+model DoctorService {
+  id        String   @id @default(cuid())
+  doctorId  String
+  serviceId String
+  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([doctorId, serviceId])
+  @@map("doctor_services")
+}
+
+// Day of Week Enum
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+// Schedule Model (Doctor's Working Hours)
+model Schedule {
+  id           String    @id @default(cuid())
+  doctorId     String
+  dayOfWeek    DayOfWeek
+  startTime    String    // "09:00"
+  endTime      String    // "17:00"
+  slotDuration Int       @default(30) // minutes
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, dayOfWeek])
+  @@index([doctorId])
+  @@map("schedules")
+}
+
+// Appointment Status Enum
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+// Appointment Model
+model Appointment {
+  id        String            @id @default(cuid())
+  patientId String
+  doctorId  String
+  serviceId String?
+  date      DateTime          @db.Date
+  time      String            // "10:00"
+  status    AppointmentStatus @default(PENDING)
+  notes     String?           @db.Text
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  patient Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor  Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  service Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  // Prevent double booking: one doctor can't have two appointments at same time
+  @@unique([doctorId, date, time])
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([serviceId])
+  @@index([date])
+  @@index([status])
+  @@map("appointments")
+}
+
+// OTP Model for Phone Verification
+model OTP {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone, code])
+  @@map("otps")
+}
