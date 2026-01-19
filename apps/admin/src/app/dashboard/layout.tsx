@@ -106,8 +106,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="flex items-center gap-4">
             {/* Quick link to public site */}
             <a 
-              href="/" 
+              href={process.env.NEXT_PUBLIC_WEB_URL || "https://clinic-timemanagement.vercel.app"} 
               target="_blank"
+              rel="noopener noreferrer"
               className="hidden md:flex items-center gap-2 text-sm text-gray-500 hover:text-brand-600 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
