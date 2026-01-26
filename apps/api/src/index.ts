@@ -85,3 +85,4 @@ if (process.env.VERCEL !== '1') {
 }
 
 export default app;
+// force rebuild Mon Jan 26 18:13:37 +08 2026
