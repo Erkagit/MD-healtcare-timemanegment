@@ -1,0 +1,16 @@
+{
+  "name": "qpay-gateway",
+  "version": "1.0.0",
+  "description": "QPay API Gateway Proxy - runs on VPS with static IP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^3.0.0",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0"
+  }
+}

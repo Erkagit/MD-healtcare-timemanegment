@@ -1,6 +1,7 @@
 // ==========================================
-// QPAY CLIENT - QPay V2 API Integration
-// API Base: https://merchant.qpay.mn/v2
+// QPAY CLIENT - QPay API Integration
+// Direct: https://qr.qpay.mn/v1
+// Via Gateway: http://<VPS_IP>:8080/v1
 // ==========================================
 
 import axios, { AxiosInstance } from 'axios';
@@ -84,6 +85,7 @@ class QPay {
   private readonly password: string;
   private readonly invoiceCode: string;
   private readonly callbackUrl: string;
+  private readonly gatewayKey: string;
 
   constructor() {
     const baseURL = process.env.QPAY_API_URL || 'https://qr.qpay.mn/v1';
@@ -91,17 +93,26 @@ class QPay {
     this.password = process.env.QPAY_PASSWORD || '';
     this.invoiceCode = process.env.QPAY_INVOICE_CODE || '';
     this.callbackUrl = process.env.QPAY_CALLBACK_URL || '';
+    this.gatewayKey = process.env.QPAY_GATEWAY_KEY || '';
 
     if (!this.username || !this.password || !this.invoiceCode) {
       console.warn('⚠️  QPay credentials not configured. Set QPAY_USERNAME, QPAY_PASSWORD, QPAY_INVOICE_CODE in .env');
     }
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // If using gateway proxy, add the API key header
+    if (this.gatewayKey) {
+      headers['x-gateway-key'] = this.gatewayKey;
+      console.log('🔗 QPay using gateway proxy:', baseURL);
+    }
+
     this.client = axios.create({
       baseURL,
       timeout: 30000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
   }
 
