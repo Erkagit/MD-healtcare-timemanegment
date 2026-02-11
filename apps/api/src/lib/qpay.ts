@@ -86,7 +86,7 @@ class QPay {
   private readonly callbackUrl: string;
 
   constructor() {
-    const baseURL = process.env.QPAY_API_URL || 'https://merchant.qpay.mn/v2';
+    const baseURL = process.env.QPAY_API_URL || 'https://qr.qpay.mn/v1';
     this.username = process.env.QPAY_USERNAME || '';
     this.password = process.env.QPAY_PASSWORD || '';
     this.invoiceCode = process.env.QPAY_INVOICE_CODE || '';
