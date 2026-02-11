@@ -5,9 +5,27 @@
 // Enums
 export enum AppointmentStatus {
   PENDING = 'PENDING',
+  PAID = 'PAID',
   CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED',
+  NO_SHOW = 'NO_SHOW',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED',
+  EXPIRED = 'EXPIRED',
+}
+
+export enum PaymentMethod {
+  QPAY = 'QPAY',
+  SOCIALPAY = 'SOCIALPAY',
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  CASH = 'CASH',
+  ADMIN_OVERRIDE = 'ADMIN_OVERRIDE',
 }
 
 export enum DayOfWeek {
@@ -60,6 +78,7 @@ export interface Appointment {
   id: string;
   patientId: string;
   doctorId: string;
+  serviceId?: string;
   date: string;      // "2026-01-20"
   time: string;      // "10:00"
   status: AppointmentStatus;
@@ -67,6 +86,29 @@ export interface Appointment {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Payment Types
+export interface Payment {
+  id: string;
+  appointmentId: string;
+  amount: number;
+  type: 'BOOKING_FEE' | 'SERVICE_BALANCE';
+  status: PaymentStatus;
+  method: PaymentMethod;
+  qrCode: string | null;
+  qrUrl: string | null;
+  invoiceId: string | null;
+  transactionId: string | null;
+  paidAt: Date | null;
+  expiresAt: Date | null;
+  refundedAt: Date | null;
+  refundReason: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Booking Fee Constant
+export const BOOKING_FEE = 25000; // 25,000₮
 
 // API Request Types
 export interface CreatePatientRequest {
@@ -113,15 +155,33 @@ export interface CreateScheduleRequest {
 
 export interface CreateAppointmentRequest {
   doctorId: string;
+  serviceId?: string;
   date: string;
   time: string;
   patientName: string;
   patientPhone: string;
+  patientEmail?: string;
   notes?: string;
 }
 
 export interface UpdateAppointmentStatusRequest {
   status: AppointmentStatus;
+}
+
+// Payment Request Types
+export interface CreatePaymentInvoiceRequest {
+  appointmentId: string;
+}
+
+export interface PaymentCallbackRequest {
+  invoiceId: string;
+  transactionId: string;
+  status: string;
+  amount?: number;
+}
+
+export interface RefundPaymentRequest {
+  reason: string;
 }
 
 // API Response Types
@@ -164,6 +224,8 @@ export interface DoctorWithSchedules extends Doctor {
 export interface AppointmentWithDetails extends Appointment {
   patient: Patient;
   doctor: Doctor;
+  service?: Service;
+  payments?: Payment[];
 }
 
 export interface TimeSlot {

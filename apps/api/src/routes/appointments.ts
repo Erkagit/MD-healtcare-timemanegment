@@ -186,6 +186,8 @@ router.get(
           include: {
             patient: true,
             doctor: true,
+            service: true,
+            payments: { orderBy: { createdAt: 'desc' } },
           },
           orderBy: [{ date: 'desc' }, { time: 'asc' }],
           skip: (Number(page) - 1) * Number(limit),
@@ -250,6 +252,8 @@ router.get(
         include: {
           patient: true,
           doctor: true,
+          service: true,
+          payments: { orderBy: { createdAt: 'desc' } },
         },
         orderBy: [{ date: 'asc' }, { time: 'asc' }],
       });
@@ -296,6 +300,8 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
       include: {
         patient: true,
         doctor: true,
+        service: true,
+        payments: { orderBy: { createdAt: 'desc' } },
       },
     });
 
@@ -325,7 +331,7 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
 router.patch(
   '/:id/status',
   authenticateAdmin,
-  [body('status').isIn(['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED']).withMessage('Буруу статус')],
+  [body('status').isIn(['PENDING', 'PAID', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW']).withMessage('Буруу статус')],
   async (req, res, next) => {
     try {
       const errors = validationResult(req);
@@ -342,6 +348,8 @@ router.patch(
         include: {
           patient: true,
           doctor: true,
+          service: true,
+          payments: { orderBy: { createdAt: 'desc' } },
         },
       });
 
@@ -374,8 +382,8 @@ router.delete('/:id', optionalAuth, async (req, res, next) => {
       throw new AppError('Хандах эрхгүй', 403);
     }
 
-    // Can only cancel PENDING or CONFIRMED appointments
-    if (!['PENDING', 'CONFIRMED'].includes(appointment.status)) {
+    // Can only cancel PENDING, PAID or CONFIRMED appointments
+    if (!['PENDING', 'PAID', 'CONFIRMED'].includes(appointment.status)) {
       throw new AppError('Энэ захиалгыг цуцлах боломжгүй', 400);
     }
 

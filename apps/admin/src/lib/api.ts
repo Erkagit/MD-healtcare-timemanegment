@@ -137,13 +137,39 @@ export const appointmentsAPI = {
   },
 };
 
-// Services APIs
+// Payment APIs
+export const paymentsAPI = {
+  getByAppointment: (appointmentId: string) =>
+    fetchAPI<{ success: boolean; data: Payment[] }>(`/payments/appointment/${appointmentId}`),
+
+  verify: (paymentId: string, data?: { transactionId?: string; notes?: string }) =>
+    fetchAPI<{ success: boolean; data: AppointmentWithDetails }>(`/payments/${paymentId}/verify`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    }),
+
+  refund: (paymentId: string, reason: string) =>
+    fetchAPI<{ success: boolean }>(`/payments/${paymentId}/refund`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+
+  getStats: () =>
+    fetchAPI<{ success: boolean; data: PaymentStats }>('/payments/stats'),
+
+  simulatePayment: (paymentId: string) =>
+    fetchAPI<{ success: boolean; data: AppointmentWithDetails }>(`/payments/simulate-payment/${paymentId}`, {
+      method: 'POST',
+    }),
+};
+
+// Services APIs (Admin - includes prices)
 export const servicesAPI = {
   getCategories: () =>
-    fetchAPI<ServiceCategory[]>('/services/categories'),
+    fetchAPI<ServiceCategory[]>('/services/categories/admin'),
 
   getAll: () =>
-    fetchAPI<Service[]>('/services'),
+    fetchAPI<Service[]>('/services/admin/all'),
 
   createCategory: (data: CreateCategoryInput) =>
     fetchAPI<ServiceCategory>('/services/categories', {
@@ -221,6 +247,7 @@ export interface AppointmentWithDetails {
   id: string;
   patientId: string;
   doctorId: string;
+  serviceId?: string;
   date: string;
   time: string;
   status: string;
@@ -228,6 +255,35 @@ export interface AppointmentWithDetails {
   createdAt: string;
   patient: Patient;
   doctor: Doctor;
+  service?: Service;
+  payments?: Payment[];
+}
+
+export interface Payment {
+  id: string;
+  appointmentId: string;
+  amount: number;
+  type: string;
+  status: string;
+  method: string;
+  qrCode: string | null;
+  qrUrl: string | null;
+  invoiceId: string | null;
+  transactionId: string | null;
+  paidAt: string | null;
+  expiresAt: string | null;
+  refundedAt: string | null;
+  refundReason: string | null;
+  createdAt: string;
+}
+
+export interface PaymentStats {
+  totalPayments: number;
+  completedPayments: number;
+  todayPayments: number;
+  totalRevenue: number;
+  todayRevenue: number;
+  pendingPayments: number;
 }
 
 export interface DashboardStats {

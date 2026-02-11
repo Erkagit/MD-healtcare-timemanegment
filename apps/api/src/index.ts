@@ -17,6 +17,7 @@ import appointmentRoutes from './routes/appointments';
 import adminRoutes from './routes/admin';
 import scheduleRoutes from './routes/schedules';
 import serviceRoutes from './routes/services';
+import paymentRoutes from './routes/payments';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -68,6 +69,7 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Error handling
 app.use(errorHandler);

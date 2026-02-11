@@ -68,6 +68,28 @@ export const appointmentsAPI = {
     fetchAPI<{ success: boolean; data: AppointmentWithDetails }>(`/appointments/${id}`),
 };
 
+// Payment APIs
+export const paymentsAPI = {
+  createInvoice: (appointmentId: string) =>
+    fetchAPI<{ 
+      success: boolean; 
+      data: PaymentInvoice;
+      message: string;
+    }>('/payments/create-invoice', {
+      method: 'POST',
+      body: JSON.stringify({ appointmentId }),
+    }),
+
+  checkStatus: (paymentId: string) =>
+    fetchAPI<{ 
+      success: boolean; 
+      data: PaymentCheckResult;
+    }>(`/payments/check/${paymentId}`),
+
+  getByAppointment: (appointmentId: string) =>
+    fetchAPI<{ success: boolean; data: Payment[] }>(`/payments/appointment/${appointmentId}`),
+};
+
 // Auth APIs
 export const authAPI = {
   sendOTP: (phone: string) =>
@@ -100,10 +122,10 @@ interface Service {
   description: string | null;
   categoryId: string;
   duration: number;
-  price: number | null;
   isActive: boolean;
   order: number;
   category?: ServiceCategory;
+  // price is intentionally NOT included in public API
 }
 
 interface Doctor {
@@ -149,6 +171,42 @@ interface AppointmentWithDetails extends Appointment {
   patient: Patient;
   doctor: Doctor;
   service?: Service;
+  payments?: Payment[];
+}
+
+interface Payment {
+  id: string;
+  appointmentId: string;
+  amount: number;
+  type: string;
+  status: string;
+  method: string;
+  qrCode: string | null;
+  qrUrl: string | null;
+  invoiceId: string | null;
+  transactionId: string | null;
+  paidAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+interface PaymentInvoice {
+  paymentId: string;
+  amount: number;
+  qrCode: string | null;
+  qrUrl: string | null;
+  invoiceId: string | null;
+  expiresAt: string | null;
+}
+
+interface PaymentCheckResult {
+  paymentId: string;
+  appointmentId?: string;
+  amount?: number;
+  status: string;
+  paidAt?: string | null;
+  message?: string;
+  appointment?: AppointmentWithDetails;
 }
 
 interface CreateAppointmentRequest {
@@ -185,5 +243,8 @@ export type {
   AppointmentWithDetails,
   CreateAppointmentRequest,
   TimeSlot,
-  AvailableSlotsResponse
+  AvailableSlotsResponse,
+  Payment,
+  PaymentInvoice,
+  PaymentCheckResult,
 };

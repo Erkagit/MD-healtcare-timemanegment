@@ -9,7 +9,7 @@ import { authenticateAdmin } from '../middleware/auth';
 const router = Router();
 const prisma = new PrismaClient();
 
-// GET /api/services/categories - Get all service categories with services
+// GET /api/services/categories - Get all service categories with services (PUBLIC - no prices)
 router.get('/categories', async (req: Request, res: Response) => {
   try {
     const categories = await prisma.serviceCategory.findMany({
@@ -18,6 +18,16 @@ router.get('/categories', async (req: Request, res: Response) => {
         services: {
           where: { isActive: true },
           orderBy: { order: 'asc' },
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            categoryId: true,
+            duration: true,
+            isActive: true,
+            order: true,
+            // price is intentionally excluded from public API
+          },
         },
       },
       orderBy: { order: 'asc' },
@@ -30,7 +40,26 @@ router.get('/categories', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/services - Get all services
+// GET /api/services/categories/admin - Get all categories with FULL data including prices (Admin only)
+router.get('/categories/admin', authenticateAdmin, async (req: Request, res: Response) => {
+  try {
+    const categories = await prisma.serviceCategory.findMany({
+      include: {
+        services: {
+          orderBy: { order: 'asc' },
+        },
+      },
+      orderBy: { order: 'asc' },
+    });
+
+    res.json(categories);
+  } catch (error) {
+    console.error('Get admin categories error:', error);
+    res.status(500).json({ message: 'Серверийн алдаа' });
+  }
+});
+
+// GET /api/services - Get all services (PUBLIC - no prices)
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { categoryId } = req.query;
@@ -40,6 +69,31 @@ router.get('/', async (req: Request, res: Response) => {
         isActive: true,
         ...(categoryId && { categoryId: categoryId as string }),
       },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        categoryId: true,
+        duration: true,
+        isActive: true,
+        order: true,
+        category: true,
+        // price is intentionally excluded from public API
+      },
+      orderBy: [{ category: { order: 'asc' } }, { order: 'asc' }],
+    });
+
+    res.json(services);
+  } catch (error) {
+    console.error('Get services error:', error);
+    res.status(500).json({ message: 'Серверийн алдаа' });
+  }
+});
+
+// GET /api/services/admin/all - Get all services with prices (Admin only)
+router.get('/admin/all', authenticateAdmin, async (req: Request, res: Response) => {
+  try {
+    const services = await prisma.service.findMany({
       include: {
         category: true,
       },
@@ -48,7 +102,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     res.json(services);
   } catch (error) {
-    console.error('Get services error:', error);
+    console.error('Get admin services error:', error);
     res.status(500).json({ message: 'Серверийн алдаа' });
   }
 });
