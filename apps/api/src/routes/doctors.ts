@@ -34,6 +34,7 @@ router.get(
         orderBy: { name: 'asc' },
       });
 
+      res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
       res.json({
         success: true,
         data: doctors,
@@ -180,6 +181,7 @@ router.get('/:id/slots', async (req, res, next) => {
       slots.push({ time, available });
     }
 
+    res.set('Cache-Control', 'public, s-maxage=15, stale-while-revalidate=30');
     res.json({
       success: true,
       data: {

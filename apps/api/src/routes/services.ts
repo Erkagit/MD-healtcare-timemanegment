@@ -3,11 +3,10 @@
 // ==========================================
 
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { authenticateAdmin } from '../middleware/auth';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // GET /api/services/categories - Get all service categories with services (PUBLIC - no prices)
 router.get('/categories', async (req: Request, res: Response) => {
@@ -33,6 +32,7 @@ router.get('/categories', async (req: Request, res: Response) => {
       orderBy: { order: 'asc' },
     });
 
+    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
     res.json(categories);
   } catch (error) {
     console.error('Get categories error:', error);
@@ -83,6 +83,7 @@ router.get('/', async (req: Request, res: Response) => {
       orderBy: [{ category: { order: 'asc' } }, { order: 'asc' }],
     });
 
+    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
     res.json(services);
   } catch (error) {
     console.error('Get services error:', error);

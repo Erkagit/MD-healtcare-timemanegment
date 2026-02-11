@@ -4,9 +4,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 // Generic fetch wrapper
 async function fetchAPI<T>(
   endpoint: string,
-  options?: RequestInit
+  options?: RequestInit & { revalidate?: number }
 ): Promise<T> {
   const url = `${API_URL}${endpoint}`;
+  const isGet = !options?.method || options.method === 'GET';
   
   const response = await fetch(url, {
     ...options,
@@ -14,12 +15,14 @@ async function fetchAPI<T>(
       'Content-Type': 'application/json',
       ...options?.headers,
     },
+    // Cache GET requests for 60 seconds by default
+    ...(isGet && { next: { revalidate: options?.revalidate ?? 60 } }),
   });
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'API request failed');
+    throw new Error(data.error || data.message || 'API request failed');
   }
 
   return data;
