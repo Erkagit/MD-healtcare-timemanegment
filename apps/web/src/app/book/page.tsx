@@ -698,25 +698,51 @@ function BookingPageContent() {
 
                   {/* QR Code Display */}
                   <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 inline-block mb-6">
-                    <div className="w-64 h-64 bg-gray-100 rounded-xl flex items-center justify-center mx-auto relative">
-                      {paymentInvoice?.qrCode ? (
-                        <div className="text-center">
-                          {/* In production, render actual QR image from payment provider */}
-                          <div className="w-48 h-48 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center">
-                            <div className="text-center">
-                              <svg className="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                              </svg>
-                              <p className="text-sm text-gray-500">QR Код</p>
-                              <p className="text-xs text-gray-400 mt-1">Invoice: {paymentInvoice.invoiceId?.slice(-8)}</p>
-                            </div>
-                          </div>
-                        </div>
+                    <div className="w-64 h-64 rounded-xl flex items-center justify-center mx-auto relative overflow-hidden">
+                      {paymentInvoice?.qrImage ? (
+                        <img 
+                          src={`data:image/png;base64,${paymentInvoice.qrImage}`}
+                          alt="QPay QR Code"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : paymentInvoice?.qrCode ? (
+                        <img 
+                          src={`data:image/png;base64,${paymentInvoice.qrCode}`}
+                          alt="QPay QR Code"
+                          className="w-full h-full object-contain"
+                        />
                       ) : (
                         <div className="animate-spin h-8 w-8 border-4 border-pink-600 border-t-transparent rounded-full" />
                       )}
                     </div>
                   </div>
+
+                  {/* Bank App Deep Links */}
+                  {paymentInvoice?.urls && paymentInvoice.urls.length > 0 && (
+                    <div className="mb-6">
+                      <p className="text-sm text-gray-600 mb-3">Эсвэл банкны апп-аар шууд нээх:</p>
+                      <div className="flex flex-wrap justify-center gap-3 max-w-md mx-auto">
+                        {paymentInvoice.urls.slice(0, 8).map((bank: any, idx: number) => (
+                          <a
+                            key={idx}
+                            href={bank.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-50 transition-colors w-16"
+                          >
+                            {bank.logo ? (
+                              <img src={bank.logo} alt={bank.description} className="w-10 h-10 rounded-lg" />
+                            ) : (
+                              <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-600">
+                                {bank.name?.slice(0, 2)}
+                              </div>
+                            )}
+                            <span className="text-[10px] text-gray-600 text-center leading-tight truncate w-full">{bank.description || bank.name}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Amount and countdown */}
                   <div className="space-y-3 mb-6">

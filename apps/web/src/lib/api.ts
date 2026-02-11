@@ -197,9 +197,16 @@ interface PaymentInvoice {
   paymentId: string;
   amount: number;
   qrCode: string | null;
+  qrImage: string | null; // Base64 encoded QR image from QPay
   qrUrl: string | null;
   invoiceId: string | null;
   expiresAt: string | null;
+  urls?: Array<{ // Bank app deep links from QPay
+    name: string;
+    description: string;
+    logo: string;
+    link: string;
+  }>;
 }
 
 interface PaymentCheckResult {
