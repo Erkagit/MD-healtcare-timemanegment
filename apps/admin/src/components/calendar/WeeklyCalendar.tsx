@@ -31,6 +31,12 @@ const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; 
     text: 'text-amber-900',
     hover: 'hover:bg-amber-100',
   },
+  PAID: {
+    bg: 'bg-blue-50',
+    border: 'border-l-blue-400',
+    text: 'text-blue-900',
+    hover: 'hover:bg-blue-100',
+  },
   CONFIRMED: {
     bg: 'bg-emerald-50',
     border: 'border-l-emerald-400',
@@ -43,6 +49,12 @@ const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; 
     text: 'text-red-900',
     hover: 'hover:bg-red-100',
   },
+  NO_SHOW: {
+    bg: 'bg-orange-50',
+    border: 'border-l-orange-400',
+    text: 'text-orange-900',
+    hover: 'hover:bg-orange-100',
+  },
   COMPLETED: {
     bg: 'bg-slate-100',
     border: 'border-l-slate-400',
@@ -52,9 +64,11 @@ const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; 
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Хүлээгдэж буй',
+  PENDING: 'Төлбөр хүлээгдэж буй',
+  PAID: 'Төлбөр орсон',
   CONFIRMED: 'Баталгаажсан',
   COMPLETED: 'Дууссан',
+  NO_SHOW: 'Ирээгүй',
   CANCELLED: 'Цуцлагдсан',
 };
 

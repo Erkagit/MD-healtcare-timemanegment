@@ -13,15 +13,19 @@ import { adminAPI, type DashboardStats, type AppointmentWithDetails } from '@/li
 const StatusBadge = ({ status }: { status: string }) => {
   const styles: Record<string, string> = {
     PENDING: 'badge badge-pending',
+    PAID: 'bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full text-xs font-semibold',
     CONFIRMED: 'badge badge-confirmed',
     COMPLETED: 'badge badge-completed',
+    NO_SHOW: 'bg-orange-100 text-orange-800 px-2.5 py-1 rounded-full text-xs font-semibold',
     CANCELLED: 'badge badge-cancelled',
   };
 
   const labels: Record<string, string> = {
-    PENDING: 'Хүлээгдэж буй',
+    PENDING: 'Төлбөр хүлээгдэж буй',
+    PAID: 'Төлбөр орсон',
     CONFIRMED: 'Баталгаажсан',
     COMPLETED: 'Дууссан',
+    NO_SHOW: 'Ирээгүй',
     CANCELLED: 'Цуцлагдсан',
   };
 

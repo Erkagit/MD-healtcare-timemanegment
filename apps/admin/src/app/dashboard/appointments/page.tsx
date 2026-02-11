@@ -11,15 +11,19 @@ import { WeeklyCalendar, AppointmentDetailModal } from '@/components/calendar';
 const StatusBadge = ({ status }: { status: string }) => {
   const styles: Record<string, string> = {
     PENDING: 'bg-amber-100 text-amber-800 border-amber-300',
+    PAID: 'bg-blue-100 text-blue-800 border-blue-300',
     CONFIRMED: 'bg-emerald-100 text-emerald-800 border-emerald-300',
     COMPLETED: 'bg-slate-100 text-slate-700 border-slate-300',
+    NO_SHOW: 'bg-orange-100 text-orange-800 border-orange-300',
     CANCELLED: 'bg-red-100 text-red-800 border-red-300',
   };
 
   const labels: Record<string, string> = {
-    PENDING: 'Хүлээгдэж буй',
+    PENDING: 'Төлбөр хүлээгдэж буй',
+    PAID: 'Төлбөр орсон',
     CONFIRMED: 'Баталгаажсан',
     COMPLETED: 'Дууссан',
+    NO_SHOW: 'Ирээгүй',
     CANCELLED: 'Цуцлагдсан',
   };
 
@@ -270,9 +274,11 @@ export default function AppointmentsCalendarPage() {
             className="px-3 py-2 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
           >
             <option value="">Бүх төлөв</option>
-            <option value="PENDING">Хүлээгдэж буй</option>
+            <option value="PENDING">Төлбөр хүлээгдэж буй</option>
+            <option value="PAID">Төлбөр орсон</option>
             <option value="CONFIRMED">Баталгаажсан</option>
             <option value="COMPLETED">Дууссан</option>
+            <option value="NO_SHOW">Ирээгүй</option>
             <option value="CANCELLED">Цуцлагдсан</option>
           </select>
           
