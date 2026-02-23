@@ -1,12 +1,9 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth';
 
-const inter = Inter({ subsets: ['latin'] });
-
 export const metadata: Metadata = {
-  title: 'Эмнэлэг | Админ',
+  title: 'MD Health Care | Админ',
   description: 'Эмнэлгийн удирдлагын систем',
 };
 
@@ -16,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="mn">
-      <body className={inter.className}>
+    <html lang="mn" className="antialiased">
+      <body>
         <AuthProvider>
           {children}
         </AuthProvider>

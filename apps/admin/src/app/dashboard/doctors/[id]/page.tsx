@@ -73,46 +73,42 @@ export default function EditDoctorPage({ params }: { params: { id: string } }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-brand-600 border-t-transparent rounded-full" />
+        <div className="w-7 h-7 border-2 border-blush-200 border-t-blush-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <button
-          onClick={() => router.back()}
-          className="text-gray-500 hover:text-brand-600 flex items-center transition-colors"
-        >
-          <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Буцах
-        </button>
-      </div>
+    <div className="space-y-5 animate-fade-in">
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
+        Буцах
+      </button>
 
-      <div className="max-w-2xl">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Эмч засварлах</h1>
-          <p className="text-gray-500 mt-1">Эмчийн мэдээллийг шинэчлэх</p>
+      <div className="max-w-xl">
+        <div className="mb-5">
+          <h1 className="text-lg font-bold text-slate-900">Эмч засварлах</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Эмчийн мэдээллийг шинэчлэх</p>
         </div>
 
-        <div className="bg-white rounded-card shadow-card p-6">
+        <div className="bg-white rounded-xl border border-slate-200/80 p-5">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 flex items-center gap-3">
-              <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="alert alert-error mb-5">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
               </svg>
-              {error}
+              <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Эмчийн нэр *
-              </label>
+              <label className="label">Эмчийн нэр *</label>
               <input
                 type="text"
                 value={formData.name}
@@ -123,9 +119,7 @@ export default function EditDoctorPage({ params }: { params: { id: string } }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Мэргэжил *
-              </label>
+              <label className="label">Мэргэжил *</label>
               <select
                 value={formData.specialization}
                 onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
@@ -134,17 +128,13 @@ export default function EditDoctorPage({ params }: { params: { id: string } }) {
               >
                 <option value="">Сонгоно уу</option>
                 {SPECIALIZATIONS.map((spec) => (
-                  <option key={spec} value={spec}>
-                    {spec}
-                  </option>
+                  <option key={spec} value={spec}>{spec}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Танилцуулга
-              </label>
+              <label className="label">Танилцуулга</label>
               <textarea
                 value={formData.bio}
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
@@ -153,36 +143,33 @@ export default function EditDoctorPage({ params }: { params: { id: string } }) {
               />
             </div>
 
-            <div className="flex items-center gap-3 p-4 bg-surface-50 rounded-xl">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="h-5 w-5 text-brand-600 focus:ring-brand-500 border-gray-300 rounded transition-colors"
-              />
-              <label htmlFor="isActive" className="text-sm text-gray-700 select-none cursor-pointer">
-                <span className="font-medium">Идэвхтэй</span>
-                <span className="text-gray-500 ml-1">- Үйлчлүүлэгчид цаг захиалах боломжтой</span>
-              </label>
-            </div>
+            {/* Active toggle */}
+            <label htmlFor="isActive" className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-slate-300 rounded-full peer-checked:bg-blush-500 transition-colors" />
+                <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-4 transition-transform shadow-sm" />
+              </div>
+              <div className="select-none">
+                <span className="text-sm font-medium text-slate-700">Идэвхтэй</span>
+                <span className="text-xs text-slate-400 ml-1.5">— Үйлчлүүлэгчид цаг захиалах боломжтой</span>
+              </div>
+            </label>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="btn-secondary"
-              >
+            <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+              <button type="button" onClick={() => router.back()} className="btn btn-secondary btn-sm">
                 Цуцлах
               </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="btn-primary"
-              >
+              <button type="submit" disabled={saving} className="btn btn-primary btn-sm">
                 {saving ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>

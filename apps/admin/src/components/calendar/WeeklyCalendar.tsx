@@ -13,7 +13,7 @@ export interface WeeklyCalendarProps {
   onStatusChange?: (id: string, status: string) => void;
   startHour?: number;
   endHour?: number;
-  slotDuration?: number; // in minutes
+  slotDuration?: number;
   loading?: boolean;
 }
 
@@ -25,46 +25,16 @@ interface PositionedAppointment extends AppointmentWithDetails {
 }
 
 const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; hover: string }> = {
-  PENDING: {
-    bg: 'bg-amber-50',
-    border: 'border-l-amber-400',
-    text: 'text-amber-900',
-    hover: 'hover:bg-amber-100',
-  },
-  PAID: {
-    bg: 'bg-blue-50',
-    border: 'border-l-blue-400',
-    text: 'text-blue-900',
-    hover: 'hover:bg-blue-100',
-  },
-  CONFIRMED: {
-    bg: 'bg-emerald-50',
-    border: 'border-l-emerald-400',
-    text: 'text-emerald-900',
-    hover: 'hover:bg-emerald-100',
-  },
-  CANCELLED: {
-    bg: 'bg-red-50',
-    border: 'border-l-red-400',
-    text: 'text-red-900',
-    hover: 'hover:bg-red-100',
-  },
-  NO_SHOW: {
-    bg: 'bg-orange-50',
-    border: 'border-l-orange-400',
-    text: 'text-orange-900',
-    hover: 'hover:bg-orange-100',
-  },
-  COMPLETED: {
-    bg: 'bg-slate-100',
-    border: 'border-l-slate-400',
-    text: 'text-slate-700',
-    hover: 'hover:bg-slate-200',
-  },
+  PENDING: { bg: 'bg-amber-50', border: 'border-l-amber-400', text: 'text-amber-800', hover: 'hover:bg-amber-100/80' },
+  PAID: { bg: 'bg-blue-50', border: 'border-l-blue-400', text: 'text-blue-800', hover: 'hover:bg-blue-100/80' },
+  CONFIRMED: { bg: 'bg-emerald-50', border: 'border-l-emerald-400', text: 'text-emerald-800', hover: 'hover:bg-emerald-100/80' },
+  CANCELLED: { bg: 'bg-red-50', border: 'border-l-red-400', text: 'text-red-800', hover: 'hover:bg-red-100/80' },
+  NO_SHOW: { bg: 'bg-orange-50', border: 'border-l-orange-400', text: 'text-orange-800', hover: 'hover:bg-orange-100/80' },
+  COMPLETED: { bg: 'bg-slate-50', border: 'border-l-slate-400', text: 'text-slate-600', hover: 'hover:bg-slate-100' },
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Төлбөр хүлээгдэж буй',
+  PENDING: 'Хүлээгдэж буй',
   PAID: 'Төлбөр орсон',
   CONFIRMED: 'Баталгаажсан',
   COMPLETED: 'Дууссан',
@@ -72,7 +42,6 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: 'Цуцлагдсан',
 };
 
-const WEEKDAYS = ['Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба', 'Ням'];
 const WEEKDAYS_SHORT = ['Дав', 'Мяг', 'Лха', 'Пүр', 'Баа', 'Бям', 'Ням'];
 
 // ==========================================
@@ -282,9 +251,9 @@ const AppointmentBlock = ({ appointment, onClick }: AppointmentBlockProps) => {
   return (
     <div
       onClick={onClick}
-      className={`absolute rounded-md border-l-4 px-2 py-1 cursor-pointer transition-all
+      className={`absolute rounded-md border-l-[3px] px-2 py-1 cursor-pointer transition-all
         ${colors.bg} ${colors.border} ${colors.text} ${colors.hover}
-        shadow-sm hover:shadow-md hover:z-20 overflow-hidden`}
+        hover:shadow-sm hover:z-20 overflow-hidden`}
       style={{
         top: `${appointment.top}px`,
         height: `${appointment.height}px`,
@@ -296,20 +265,15 @@ const AppointmentBlock = ({ appointment, onClick }: AppointmentBlockProps) => {
     >
       <div className="flex flex-col h-full overflow-hidden">
         <div className="flex items-center justify-between gap-1">
-          <span className="text-xs font-semibold truncate">
+          <span className="text-[11px] font-bold truncate font-mono">
             {appointment.time}
           </span>
-          {appointment.totalColumns <= 2 && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${colors.bg} font-medium`}>
-              {STATUS_LABELS[appointment.status]?.substring(0, 3)}
-            </span>
-          )}
         </div>
-        <div className="text-xs font-medium truncate mt-0.5">
+        <div className="text-[11px] font-medium truncate mt-0.5">
           {appointment.patient.name}
         </div>
         {appointment.height > 50 && (
-          <div className="text-[10px] opacity-75 truncate">
+          <div className="text-[10px] opacity-60 truncate">
             {appointment.doctor.name}
           </div>
         )}
@@ -344,14 +308,13 @@ const TimeGrid = ({ startHour, endHour, slotDuration }: TimeGridProps) => {
           className="relative"
           style={{ height: `${pixelsPerHour}px` }}
         >
-          <div className="absolute -top-3 left-0 w-16 text-xs text-gray-500 font-medium text-right pr-3">
+          <div className="absolute -top-3 left-0 w-14 text-[10px] text-slate-400 font-medium text-right pr-3 font-mono">
             {formatTime(minutes)}
           </div>
-          <div className="absolute left-16 right-0 border-t border-gray-200" />
-          {/* Half-hour line */}
+          <div className="absolute left-14 right-0 border-t border-slate-200/60" />
           {i < slots.length - 1 && (
-            <div 
-              className="absolute left-16 right-0 border-t border-gray-100"
+            <div
+              className="absolute left-14 right-0 border-t border-slate-100/50"
               style={{ top: `${pixelsPerHour / 2}px` }}
             />
           )}
@@ -403,13 +366,13 @@ const DayColumn = ({
     currentMinutes <= endHour * 60;
 
   return (
-    <div className={`relative border-r border-gray-200 ${isToday ? 'bg-blue-50/30' : ''}`}>
+    <div className={`relative border-r border-slate-100 ${isToday ? 'bg-blue-50/20' : ''}`}>
       <div className="relative" style={{ height: `${gridHeight}px` }}>
         {/* Hour grid lines */}
         {Array.from({ length: totalHours + 1 }).map((_, i) => (
           <div
             key={i}
-            className="absolute left-0 right-0 border-t border-gray-200"
+            className="absolute left-0 right-0 border-t border-slate-200/60"
             style={{ top: `${i * pixelsPerHour}px` }}
           />
         ))}
@@ -417,7 +380,7 @@ const DayColumn = ({
         {Array.from({ length: totalHours }).map((_, i) => (
           <div
             key={`half-${i}`}
-            className="absolute left-0 right-0 border-t border-dashed border-gray-100"
+            className="absolute left-0 right-0 border-t border-dashed border-slate-100/50"
             style={{ top: `${i * pixelsPerHour + pixelsPerHour / 2}px` }}
           />
         ))}
@@ -440,8 +403,8 @@ const DayColumn = ({
             style={{ top: `${currentTimeTop}px` }}
           >
             <div className="relative">
-              <div className="absolute -left-1 -top-1.5 w-3 h-3 rounded-full bg-red-500" />
-              <div className="absolute left-2 right-0 h-0.5 bg-red-500" />
+              <div className="absolute -left-1 -top-1 w-2 h-2 rounded-full bg-red-500" />
+              <div className="absolute left-1 right-0 h-[1.5px] bg-red-500" />
             </div>
           </div>
         )}
@@ -538,80 +501,80 @@ export default function WeeklyCalendar({
   }, [weekDates]);
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200/80 overflow-hidden">
       {/* Navigation Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-white">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => navigateWeek(-1)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
             aria-label="Previous week"
           >
-            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
           </button>
           <button
             onClick={goToToday}
-            className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            className="px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
           >
             Өнөөдөр
           </button>
           <button
             onClick={() => navigateWeek(1)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
             aria-label="Next week"
           >
-            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </button>
         </div>
 
-        <h2 className="text-lg font-semibold text-gray-900">{weekRangeText}</h2>
+        <h2 className="text-sm font-semibold text-slate-900">{weekRangeText}</h2>
 
-        {/* Legend */}
-        <div className="flex items-center gap-3">
-          {Object.entries(STATUS_LABELS).map(([status, label]) => (
-            <div key={status} className="flex items-center gap-1.5">
-              <div className={`w-3 h-3 rounded-sm ${STATUS_COLORS[status].bg} ${STATUS_COLORS[status].border} border-l-2`} />
-              <span className="text-xs text-gray-600">{label}</span>
+        {/* Compact Legend */}
+        <div className="hidden xl:flex items-center gap-2">
+          {Object.entries(STATUS_LABELS).slice(0, 4).map(([status, label]) => (
+            <div key={status} className="flex items-center gap-1">
+              <div className={`w-2 h-2 rounded-sm ${STATUS_COLORS[status].bg} ${STATUS_COLORS[status].border} border-l-2`} />
+              <span className="text-[10px] text-slate-400">{label}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Sticky Day Headers */}
-      <div className="flex border-b bg-gray-50 sticky top-0 z-20">
-        <div className="w-16 flex-shrink-0 border-r" />
+      <div className="flex border-b border-slate-100 bg-slate-50/50 sticky top-0 z-20 flex-shrink-0">
+        <div className="w-14 flex-shrink-0 border-r border-slate-100" />
         <div className="flex-1 grid grid-cols-7">
           {weekDates.map((date, i) => {
             const dateStr = formatDate(date);
             const isToday = dateStr === today;
             const dayAppointments = appointmentsByDate.get(dateStr) || [];
-            
+
             return (
               <div
                 key={i}
-                className={`px-2 py-3 text-center border-r last:border-r-0 ${
-                  isToday ? 'bg-blue-50' : ''
+                className={`px-1.5 py-2.5 text-center border-r border-slate-100 last:border-r-0 ${
+                  isToday ? 'bg-blue-50/30' : ''
                 }`}
               >
-                <div className={`text-xs font-medium ${isToday ? 'text-blue-600' : 'text-gray-500'}`}>
+                <div className={`text-[10px] font-bold uppercase tracking-wider ${isToday ? 'text-slate-900' : 'text-slate-400'}`}>
                   {WEEKDAYS_SHORT[i]}
                 </div>
                 <div
-                  className={`text-xl font-semibold mt-0.5 ${
+                  className={`text-lg font-semibold mt-0.5 ${
                     isToday
-                      ? 'w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto'
-                      : 'text-gray-900'
+                      ? 'w-7 h-7 bg-blush-500 text-white rounded-full flex items-center justify-center mx-auto text-sm'
+                      : 'text-slate-700'
                   }`}
                 >
                   {date.getDate()}
                 </div>
                 {dayAppointments.length > 0 && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    {dayAppointments.length} захиалга
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    {dayAppointments.length}
                   </div>
                 )}
               </div>
@@ -623,10 +586,7 @@ export default function WeeklyCalendar({
       {/* Calendar Body */}
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
-            <span className="text-sm text-gray-500">Ачааллаж байна...</span>
-          </div>
+          <div className="w-7 h-7 border-2 border-blush-200 border-t-blush-500 rounded-full animate-spin" />
         </div>
       ) : (
         <div
@@ -636,14 +596,14 @@ export default function WeeklyCalendar({
         >
           <div className="flex min-h-full">
             {/* Time Labels */}
-            <div className="w-16 flex-shrink-0 relative bg-white border-r">
+            <div className="w-14 flex-shrink-0 relative bg-white border-r border-slate-100">
               {Array.from({ length: totalHours + 1 }).map((_, i) => (
                 <div
                   key={i}
                   className="absolute right-0 w-full pr-2 text-right"
                   style={{ top: `${i * pixelsPerHour - 8}px` }}
                 >
-                  <span className="text-xs text-gray-500 font-medium">
+                  <span className="text-[10px] text-slate-400 font-medium font-mono">
                     {formatTime((startHour + i) * 60)}
                   </span>
                 </div>
@@ -656,7 +616,7 @@ export default function WeeklyCalendar({
               {weekDates.map((date, i) => {
                 const dateStr = formatDate(date);
                 const dayAppointments = appointmentsByDate.get(dateStr) || [];
-                
+
                 return (
                   <DayColumn
                     key={i}

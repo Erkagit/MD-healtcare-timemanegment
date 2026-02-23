@@ -44,8 +44,12 @@ async function proxyRequest(
   method: string
 ) {
   const path = pathSegments.join('/');
-  const url = `${API_BACKEND_URL}/api/${path}`;
-  
+  // Forward query string parameters (critical for filtering/pagination)
+  const search = request.nextUrl.search || '';
+  const url = `${API_BACKEND_URL}/api/${path}${search}`;
+
+  console.log(`[Proxy] ${method} ${url}`);
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
@@ -71,13 +75,24 @@ async function proxyRequest(
     }
 
     const response = await fetch(url, fetchOptions);
-    const data = await response.json();
 
-    return NextResponse.json(data, { status: response.status });
+    // Forward the response as-is (handle non-JSON from backend)
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await response.json();
+      return NextResponse.json(data, { status: response.status });
+    } else {
+      const text = await response.text();
+      console.error(`[Proxy] Non-JSON response from backend: ${text.substring(0, 200)}`);
+      return NextResponse.json(
+        { success: false, error: `Backend error (${response.status})` },
+        { status: response.status }
+      );
+    }
   } catch (error) {
-    console.error('[API Proxy] Error:', error);
+    console.error('[Proxy] Backend unreachable:', error);
     return NextResponse.json(
-      { success: false, error: 'Backend API unavailable' },
+      { success: false, error: 'Backend API unavailable — сервер ажиллахгүй байна' },
       { status: 502 }
     );
   }

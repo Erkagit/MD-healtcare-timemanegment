@@ -49,6 +49,13 @@ app.use(cors({
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Log incoming requests with auth status
+app.use((req, res, next) => {
+  const hasAuth = !!req.headers.authorization;
+  console.log(`[Request] ${req.method} ${req.path} | Auth: ${hasAuth ? 'yes' : 'no'}`);
+  next();
+});
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ 

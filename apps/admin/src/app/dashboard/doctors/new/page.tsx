@@ -47,40 +47,36 @@ export default function NewDoctorPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <button
-          onClick={() => router.back()}
-          className="text-gray-500 hover:text-brand-600 flex items-center transition-colors"
-        >
-          <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Буцах
-        </button>
-      </div>
+    <div className="space-y-5 animate-fade-in">
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
+        Буцах
+      </button>
 
-      <div className="max-w-2xl">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Шинэ эмч бүртгэх</h1>
-          <p className="text-gray-500 mt-1">Эмчийн мэдээллийг оруулна уу</p>
+      <div className="max-w-xl">
+        <div className="mb-5">
+          <h1 className="text-lg font-bold text-slate-900">Шинэ эмч бүртгэх</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Эмчийн мэдээллийг оруулна уу</p>
         </div>
 
-        <div className="bg-white rounded-card shadow-card p-6">
+        <div className="bg-white rounded-xl border border-slate-200/80 p-5">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 flex items-center gap-3">
-              <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="alert alert-error mb-5">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
               </svg>
-              {error}
+              <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Эмчийн нэр *
-              </label>
+              <label className="label">Эмчийн нэр *</label>
               <input
                 type="text"
                 value={formData.name}
@@ -92,9 +88,7 @@ export default function NewDoctorPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Мэргэжил *
-              </label>
+              <label className="label">Мэргэжил *</label>
               <select
                 value={formData.specialization}
                 onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
@@ -103,17 +97,13 @@ export default function NewDoctorPage() {
               >
                 <option value="">Сонгоно уу</option>
                 {SPECIALIZATIONS.map((spec) => (
-                  <option key={spec} value={spec}>
-                    {spec}
-                  </option>
+                  <option key={spec} value={spec}>{spec}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Танилцуулга
-              </label>
+              <label className="label">Танилцуулга</label>
               <textarea
                 value={formData.bio}
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
@@ -123,22 +113,14 @@ export default function NewDoctorPage() {
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="btn-secondary"
-              >
+            <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+              <button type="button" onClick={() => router.back()} className="btn btn-secondary btn-sm">
                 Цуцлах
               </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary"
-              >
+              <button type="submit" disabled={loading} className="btn btn-primary btn-sm">
                 {loading ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>

@@ -52,10 +52,10 @@ router.get('/categories/admin', authenticateAdmin, async (req: Request, res: Res
       orderBy: { order: 'asc' },
     });
 
-    res.json(categories);
+    res.json({ success: true, data: categories });
   } catch (error) {
     console.error('Get admin categories error:', error);
-    res.status(500).json({ message: 'Серверийн алдаа' });
+    res.status(500).json({ success: false, error: 'Серверийн алдаа' });
   }
 });
 
@@ -101,10 +101,10 @@ router.get('/admin/all', authenticateAdmin, async (req: Request, res: Response) 
       orderBy: [{ category: { order: 'asc' } }, { order: 'asc' }],
     });
 
-    res.json(services);
+    res.json({ success: true, data: services });
   } catch (error) {
     console.error('Get admin services error:', error);
-    res.status(500).json({ message: 'Серверийн алдаа' });
+    res.status(500).json({ success: false, error: 'Серверийн алдаа' });
   }
 });
 
@@ -156,10 +156,10 @@ router.post('/categories', authenticateAdmin, async (req: Request, res: Response
       },
     });
 
-    res.status(201).json(category);
+    res.status(201).json({ success: true, data: category });
   } catch (error) {
     console.error('Create category error:', error);
-    res.status(500).json({ message: 'Серверийн алдаа' });
+    res.status(500).json({ success: false, error: 'Серверийн алдаа' });
   }
 });
 
@@ -180,10 +180,10 @@ router.put('/categories/:id', authenticateAdmin, async (req: Request, res: Respo
       },
     });
 
-    res.json(category);
+    res.json({ success: true, data: category });
   } catch (error) {
     console.error('Update category error:', error);
-    res.status(500).json({ message: 'Серверийн алдаа' });
+    res.status(500).json({ success: false, error: 'Серверийн алдаа' });
   }
 });
 
@@ -196,10 +196,10 @@ router.delete('/categories/:id', authenticateAdmin, async (req: Request, res: Re
       where: { id },
     });
 
-    res.json({ message: 'Ангилал устгагдлаа' });
+    res.json({ success: true, message: 'Ангилал устгагдлаа' });
   } catch (error) {
     console.error('Delete category error:', error);
-    res.status(500).json({ message: 'Серверийн алдаа' });
+    res.status(500).json({ success: false, error: 'Серверийн алдаа' });
   }
 });
 
@@ -222,10 +222,10 @@ router.post('/', authenticateAdmin, async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json(service);
+    res.status(201).json({ success: true, data: service });
   } catch (error) {
     console.error('Create service error:', error);
-    res.status(500).json({ message: 'Серверийн алдаа' });
+    res.status(500).json({ success: false, error: 'Серверийн алдаа' });
   }
 });
 
@@ -251,10 +251,10 @@ router.put('/:id', authenticateAdmin, async (req: Request, res: Response) => {
       },
     });
 
-    res.json(service);
+    res.json({ success: true, data: service });
   } catch (error) {
     console.error('Update service error:', error);
-    res.status(500).json({ message: 'Серверийн алдаа' });
+    res.status(500).json({ success: false, error: 'Серверийн алдаа' });
   }
 });
 
@@ -267,10 +267,10 @@ router.delete('/:id', authenticateAdmin, async (req: Request, res: Response) => 
       where: { id },
     });
 
-    res.json({ message: 'Үйлчилгээ устгагдлаа' });
+    res.json({ success: true, message: 'Үйлчилгээ устгагдлаа' });
   } catch (error) {
     console.error('Delete service error:', error);
-    res.status(500).json({ message: 'Серверийн алдаа' });
+    res.status(500).json({ success: false, error: 'Серверийн алдаа' });
   }
 });
 

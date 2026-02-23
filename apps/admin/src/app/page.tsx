@@ -19,8 +19,11 @@ export default function HomePage() {
   }, [admin, isLoading, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-blush-200 border-t-blush-500 rounded-full animate-spin" />
+        <span className="text-xs text-slate-400 font-medium">Уншиж байна...</span>
+      </div>
     </div>
   );
 }

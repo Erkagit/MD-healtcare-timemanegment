@@ -5,21 +5,21 @@ import { appointmentsAPI, adminAPI, type AppointmentWithDetails, type DoctorWith
 import { WeeklyCalendar, AppointmentDetailModal } from '@/components/calendar';
 
 // ==========================================
-// STATUS BADGE COMPONENT
+// STATUS BADGE
 // ==========================================
 
 const StatusBadge = ({ status }: { status: string }) => {
   const styles: Record<string, string> = {
-    PENDING: 'bg-amber-100 text-amber-800 border-amber-300',
-    PAID: 'bg-blue-100 text-blue-800 border-blue-300',
-    CONFIRMED: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-    COMPLETED: 'bg-slate-100 text-slate-700 border-slate-300',
-    NO_SHOW: 'bg-orange-100 text-orange-800 border-orange-300',
-    CANCELLED: 'bg-red-100 text-red-800 border-red-300',
+    PENDING: 'badge badge-pending',
+    PAID: 'badge badge-info',
+    CONFIRMED: 'badge badge-confirmed',
+    COMPLETED: 'badge badge-completed',
+    NO_SHOW: 'badge badge-warning',
+    CANCELLED: 'badge badge-cancelled',
   };
 
   const labels: Record<string, string> = {
-    PENDING: 'Төлбөр хүлээгдэж буй',
+    PENDING: 'Хүлээгдэж буй',
     PAID: 'Төлбөр орсон',
     CONFIRMED: 'Баталгаажсан',
     COMPLETED: 'Дууссан',
@@ -28,53 +28,30 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
 
   return (
-    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${styles[status] || 'bg-gray-100'}`}>
-      {labels[status] || status}
-    </span>
+    <span className={styles[status] || 'badge'}>{labels[status] || status}</span>
   );
 };
 
 // ==========================================
-// HELPER FUNCTIONS
+// HELPERS
 // ==========================================
 
-const getDaysInMonth = (date: Date) => {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  return new Date(year, month + 1, 0).getDate();
-};
-
+const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 const getFirstDayOfMonth = (date: Date) => {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  let day = new Date(year, month, 1).getDay();
-  return day === 0 ? 6 : day - 1;
+  const d = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  return d === 0 ? 6 : d - 1;
 };
-
-const formatDate = (date: Date) => {
-  return date.toISOString().split('T')[0];
-};
-
-const getWeekDateRange = (date: Date): { start: string; end: string } => {
+const formatDate = (date: Date) => date.toISOString().split('T')[0];
+const getWeekDateRange = (date: Date) => {
   const current = new Date(date);
-  const dayOfWeek = current.getDay();
-  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  
+  const dow = current.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
   const monday = new Date(current);
   monday.setDate(current.getDate() + diff);
-  
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
-  
-  return {
-    start: formatDate(monday),
-    end: formatDate(sunday),
-  };
+  return { start: formatDate(monday), end: formatDate(sunday) };
 };
-
-// ==========================================
-// VIEW MODE TYPES
-// ==========================================
 
 type ViewMode = 'week' | 'month' | 'list';
 
@@ -87,7 +64,7 @@ export default function AppointmentsCalendarPage() {
   const [doctors, setDoctors] = useState<DoctorWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [doctorFilter, setDoctorFilter] = useState('');
@@ -95,15 +72,8 @@ export default function AppointmentsCalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithDetails | null>(null);
 
-  // Load doctors on mount
-  useEffect(() => {
-    loadDoctors();
-  }, []);
-
-  // Load appointments when filters or date change
-  useEffect(() => {
-    loadAppointments();
-  }, [currentDate, doctorFilter, statusFilter, viewMode]);
+  useEffect(() => { loadDoctors(); }, []);
+  useEffect(() => { loadAppointments(); }, [currentDate, doctorFilter, statusFilter, viewMode]);
 
   const loadDoctors = async () => {
     try {
@@ -116,39 +86,48 @@ export default function AppointmentsCalendarPage() {
 
   const loadAppointments = async () => {
     setLoading(true);
+    setError('');
     try {
-      let startDate: string;
-      let endDate: string;
-
+      let startDate: string, endDate: string;
       if (viewMode === 'week') {
         const range = getWeekDateRange(currentDate);
         startDate = range.start;
         endDate = range.end;
       } else {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        startDate = formatDate(new Date(year, month, 1));
-        endDate = formatDate(new Date(year, month + 1, 0));
+        const y = currentDate.getFullYear(), m = currentDate.getMonth();
+        startDate = formatDate(new Date(y, m, 1));
+        endDate = formatDate(new Date(y, m + 1, 0));
       }
-      
+
+      // Try date-range endpoint first, fall back to list only on 404
+      let data: AppointmentWithDetails[] = [];
       try {
         const response = await appointmentsAPI.getByDateRange(startDate, endDate, doctorFilter || undefined);
-        let data = response.data || [];
-        if (statusFilter) {
-          data = data.filter(apt => apt.status === statusFilter);
+        data = response.data || [];
+      } catch (rangeErr: unknown) {
+        // Only fall back if it's a 404 (endpoint not found), not auth errors
+        const isNotFound = rangeErr instanceof Error && 'status' in rangeErr && (rangeErr as { status: number }).status === 404;
+        if (isNotFound) {
+          console.warn('[Appointments] /range not available, falling back to /appointments');
+          const response = await appointmentsAPI.getAll({
+            doctorId: doctorFilter || undefined,
+            status: statusFilter || undefined,
+            limit: 200,
+          });
+          data = response.data || [];
+        } else {
+          throw rangeErr; // Re-throw auth/network errors
         }
-        setAppointments(data);
-      } catch {
-        const response = await appointmentsAPI.getAll({ 
-          doctorId: doctorFilter || undefined,
-          status: statusFilter || undefined,
-          limit: 200 
-        });
-        setAppointments(response.data);
       }
+
+      if (statusFilter) {
+        data = data.filter((apt: AppointmentWithDetails) => apt.status === statusFilter);
+      }
+      setAppointments(data);
     } catch (err) {
-      setError('Захиалгуудыг ачаалж чадсангүй');
-      console.error(err);
+      const message = err instanceof Error ? err.message : 'Захиалгуудыг ачаалж чадсангүй';
+      setError(message);
+      console.error('[Appointments] Load error:', err);
     } finally {
       setLoading(false);
     }
@@ -170,30 +149,30 @@ export default function AppointmentsCalendarPage() {
     setSelectedDate(null);
   };
 
-  const getAppointmentsForDate = (date: string) => {
-    return appointments.filter((apt) => {
-      const aptDate = new Date(apt.date).toISOString().split('T')[0];
-      return aptDate === date;
-    });
-  };
+  const getAppointmentsForDate = (date: string) =>
+    appointments.filter((apt) => new Date(apt.date).toISOString().split('T')[0] === date);
 
   const handleAppointmentClick = useCallback((apt: AppointmentWithDetails) => {
     setSelectedAppointment(apt);
   }, []);
 
-  // Monthly calendar rendering
+  const weekDays = ['Дав', 'Мяг', 'Лха', 'Пүр', 'Баа', 'Бям', 'Ням'];
+  const monthNames = [
+    'Нэгдүгээр сар', 'Хоёрдугаар сар', 'Гуравдугаар сар', 'Дөрөвдүгээр сар',
+    'Тавдугаар сар', 'Зургадугаар сар', 'Долдугаар сар', 'Наймдугаар сар',
+    'Есдүгээр сар', 'Аравдугаар сар', 'Арван нэгдүгээр сар', 'Арван хоёрдугаар сар',
+  ];
+
   const renderMonthlyCalendar = () => {
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const days = [];
     const today = formatDate(new Date());
 
-    // Empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-28 bg-gray-50" />);
+      days.push(<div key={`empty-${i}`} className="h-24 bg-slate-50/50" />);
     }
 
-    // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = formatDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
       const dayAppointments = getAppointmentsForDate(date);
@@ -204,62 +183,54 @@ export default function AppointmentsCalendarPage() {
         <div
           key={day}
           onClick={() => setSelectedDate(date)}
-          className={`h-28 border-b border-r p-1 cursor-pointer transition-colors ${
-            isToday ? 'bg-blue-50' : 'hover:bg-gray-50'
-          } ${isSelected ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+          className={`h-24 border-b border-r border-slate-100 p-1.5 cursor-pointer transition-colors ${
+            isToday ? 'bg-blue-50/50' : 'hover:bg-slate-50'
+          } ${isSelected ? 'ring-2 ring-blush-500 ring-inset' : ''}`}
         >
-          <div className={`text-sm font-medium mb-1 ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+          <div className={`text-xs font-medium mb-1 ${
+            isToday
+              ? 'w-5 h-5 bg-blush-500 text-white rounded-full flex items-center justify-center'
+              : 'text-slate-700'
+          }`}>
             {day}
           </div>
-          <div className="space-y-0.5 overflow-y-auto max-h-20">
-            {dayAppointments.slice(0, 3).map((apt) => (
+          <div className="space-y-0.5 overflow-hidden max-h-14">
+            {dayAppointments.slice(0, 2).map((apt) => (
               <div
                 key={apt.id}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedAppointment(apt);
-                }}
-                className={`text-xs p-1 rounded truncate cursor-pointer ${
-                  apt.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                  apt.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
-                  apt.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                  'bg-red-100 text-red-800'
+                onClick={(e) => { e.stopPropagation(); setSelectedAppointment(apt); }}
+                className={`text-[10px] px-1 py-0.5 rounded truncate cursor-pointer font-medium ${
+                  apt.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                  apt.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-700' :
+                  apt.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' :
+                  'bg-red-100 text-red-700'
                 }`}
               >
-                {apt.time} - {apt.patient.name}
+                {apt.time} {apt.patient.name}
               </div>
             ))}
-            {dayAppointments.length > 3 && (
-              <div className="text-xs text-gray-500 pl-1">
-                +{dayAppointments.length - 3} бусад
-              </div>
+            {dayAppointments.length > 2 && (
+              <span className="text-[10px] text-slate-400 pl-0.5">+{dayAppointments.length - 2}</span>
             )}
           </div>
         </div>
       );
     }
-
     return days;
   };
 
-  const weekDays = ['Дав', 'Мяг', 'Лха', 'Пүр', 'Баа', 'Бям', 'Ням'];
-  const monthNames = [
-    'Нэгдүгээр сар', 'Хоёрдугаар сар', 'Гуравдугаар сар', 'Дөрөвдүгээр сар',
-    'Тавдугаар сар', 'Зургадугаар сар', 'Долдугаар сар', 'Наймдугаар сар',
-    'Есдүгээр сар', 'Аравдугаар сар', 'Арван нэгдүгээр сар', 'Арван хоёрдугаар сар'
-  ];
-
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col">
+    <div className="h-[calc(100vh-var(--header-height)-48px)] flex flex-col animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-gray-900">Захиалгууд</h1>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4 flex-shrink-0">
+        <h1 className="text-lg font-bold text-slate-900">Захиалгууд</h1>
+
+        <div className="flex flex-wrap items-center gap-2">
           {/* Doctor Filter */}
           <select
             value={doctorFilter}
             onChange={(e) => setDoctorFilter(e.target.value)}
-            className="px-3 py-2 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+            className="px-2.5 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blush-500/10 focus:border-blush-300"
           >
             <option value="">Бүх эмч</option>
             {doctors.map((doc) => (
@@ -271,65 +242,39 @@ export default function AppointmentsCalendarPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+            className="px-2.5 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blush-500/10 focus:border-blush-300"
           >
             <option value="">Бүх төлөв</option>
-            <option value="PENDING">Төлбөр хүлээгдэж буй</option>
+            <option value="PENDING">Хүлээгдэж буй</option>
             <option value="PAID">Төлбөр орсон</option>
             <option value="CONFIRMED">Баталгаажсан</option>
             <option value="COMPLETED">Дууссан</option>
             <option value="NO_SHOW">Ирээгүй</option>
             <option value="CANCELLED">Цуцлагдсан</option>
           </select>
-          
+
           {/* View Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('week')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'week' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-                Долоо хоног
-              </span>
-            </button>
-            <button
-              onClick={() => setViewMode('month')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'month' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Сар
-              </span>
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'list' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-                Жагсаалт
-              </span>
-            </button>
+          <div className="flex bg-slate-100 rounded-lg p-0.5">
+            {(['week', 'month', 'list'] as ViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                  viewMode === mode
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {mode === 'week' ? 'Долоо хоног' : mode === 'month' ? 'Сар' : 'Жагсаалт'}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 mb-4 flex-shrink-0">
-          {error}
+        <div className="alert alert-error mb-3 flex-shrink-0">
+          <span>{error}</span>
         </div>
       )}
 
@@ -346,193 +291,175 @@ export default function AppointmentsCalendarPage() {
             loading={loading}
           />
         ) : viewMode === 'month' ? (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden h-full flex flex-col">
-            {/* Monthly Calendar Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0">
-              <button
-                onClick={() => navigateMonth(-1)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden h-full flex flex-col">
+            {/* Month header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
+              <button onClick={() => navigateMonth(-1)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
+                <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                 </svg>
               </button>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCurrentDate(new Date())}
-                  className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   Өнөөдөр
                 </button>
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-sm font-semibold text-slate-900">
                   {currentDate.getFullYear()} оны {monthNames[currentDate.getMonth()]}
                 </h2>
               </div>
-              <button
-                onClick={() => navigateMonth(1)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <button onClick={() => navigateMonth(1)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
+                <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                 </svg>
               </button>
             </div>
 
-            {/* Weekday Headers */}
-            <div className="grid grid-cols-7 border-b flex-shrink-0">
+            {/* Weekday headers */}
+            <div className="grid grid-cols-7 border-b border-slate-100 flex-shrink-0">
               {weekDays.map((day) => (
-                <div key={day} className="py-2 text-center text-sm font-medium text-gray-500 border-r last:border-r-0">
+                <div key={day} className="py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider border-r border-slate-100 last:border-r-0">
                   {day}
                 </div>
               ))}
             </div>
 
-            {/* Calendar Grid */}
+            {/* Calendar grid */}
             {loading ? (
               <div className="flex-1 flex items-center justify-center">
-                <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+                <div className="w-7 h-7 border-2 border-blush-200 border-t-blush-500 rounded-full animate-spin" />
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto">
-                <div className="grid grid-cols-7">
-                  {renderMonthlyCalendar()}
-                </div>
+                <div className="grid grid-cols-7">{renderMonthlyCalendar()}</div>
               </div>
             )}
-
-            {/* Legend */}
-            <div className="flex items-center gap-4 px-6 py-3 border-t bg-gray-50 flex-shrink-0">
-              <span className="text-sm text-gray-500">Төлөв:</span>
-              <span className="flex items-center gap-1 text-sm">
-                <span className="w-3 h-3 bg-amber-100 rounded"></span> Хүлээгдэж буй
-              </span>
-              <span className="flex items-center gap-1 text-sm">
-                <span className="w-3 h-3 bg-emerald-100 rounded"></span> Баталгаажсан
-              </span>
-              <span className="flex items-center gap-1 text-sm">
-                <span className="w-3 h-3 bg-slate-100 rounded"></span> Дууссан
-              </span>
-              <span className="flex items-center gap-1 text-sm">
-                <span className="w-3 h-3 bg-red-100 rounded"></span> Цуцлагдсан
-              </span>
-            </div>
           </div>
         ) : (
           /* List View */
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden h-full flex flex-col">
+          <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden h-full flex flex-col">
             {loading ? (
               <div className="flex-1 flex items-center justify-center">
-                <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+                <div className="w-7 h-7 border-2 border-blush-200 border-t-blush-500 rounded-full animate-spin" />
               </div>
             ) : appointments.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <p className="text-lg font-medium">Захиалга олдсонгүй</p>
-                  <p className="text-sm text-gray-400 mt-1">Шүүлтүүр өөрчилж үзнэ үү</p>
-                </div>
+              <div className="empty-state flex-1">
+                <svg className="w-10 h-10 text-slate-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                </svg>
+                <p className="text-sm font-medium text-slate-500">Захиалга олдсонгүй</p>
+                <p className="text-xs text-slate-400 mt-0.5">Шүүлтүүр өөрчилж үзнэ үү</p>
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Өвчтөн</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Эмч</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Огноо / Цаг</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Төлөв</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Үйлдэл</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {appointments.map((apt) => (
-                      <tr key={apt.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedAppointment(apt)}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-900">{apt.patient.name}</div>
-                          <div className="text-sm text-gray-500">{apt.patient.phone}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-gray-900">{apt.doctor.name}</div>
-                          <div className="text-sm text-gray-500">{apt.doctor.specialization}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-gray-900">{new Date(apt.date).toLocaleDateString('mn-MN')}</div>
-                          <div className="text-sm text-gray-500">{apt.time}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <StatusBadge status={apt.status} />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <select
-                            value={apt.status}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => handleStatusChange(apt.id, e.target.value)}
-                            className="px-2 py-1 border rounded text-sm focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="PENDING">Хүлээгдэж буй</option>
-                            <option value="CONFIRMED">Баталгаажуулах</option>
-                            <option value="COMPLETED">Дуусгах</option>
-                            <option value="CANCELLED">Цуцлах</option>
-                          </select>
-                        </td>
+                {/* Desktop */}
+                <div className="hidden md:block">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="table-header sticky top-0 z-10">
+                        <th className="table-th">Өвчтөн</th>
+                        <th className="table-th">Эмч</th>
+                        <th className="table-th">Огноо</th>
+                        <th className="table-th">Цаг</th>
+                        <th className="table-th">Төлөв</th>
+                        <th className="table-th text-right">Үйлдэл</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {appointments.map((apt) => (
+                        <tr key={apt.id} className="table-row cursor-pointer" onClick={() => setSelectedAppointment(apt)}>
+                          <td className="table-td">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-600 flex-shrink-0">
+                                {apt.patient.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-slate-900">{apt.patient.name}</p>
+                                <p className="text-xs text-slate-400">{apt.patient.phone}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="table-td text-sm text-slate-500">{apt.doctor.name}</td>
+                          <td className="table-td text-sm text-slate-500">
+                            {new Date(apt.date).toLocaleDateString('mn-MN', { month: 'short', day: 'numeric' })}
+                          </td>
+                          <td className="table-td text-sm text-slate-500 font-mono">{apt.time}</td>
+                          <td className="table-td"><StatusBadge status={apt.status} /></td>
+                          <td className="table-td text-right">
+                            <select
+                              value={apt.status}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => handleStatusChange(apt.id, e.target.value)}
+                              className="px-2 py-1 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blush-500/10 focus:border-blush-300 bg-white"
+                            >
+                              <option value="PENDING">Хүлээгдэж буй</option>
+                              <option value="CONFIRMED">Баталгаажуулах</option>
+                              <option value="COMPLETED">Дуусгах</option>
+                              <option value="CANCELLED">Цуцлах</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile */}
+                <div className="md:hidden divide-y divide-slate-100">
+                  {appointments.map((apt) => (
+                    <div key={apt.id} className="px-4 py-3 flex items-center gap-3" onClick={() => setSelectedAppointment(apt)}>
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-600 flex-shrink-0">
+                        {apt.patient.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 truncate">{apt.patient.name}</p>
+                        <p className="text-xs text-slate-400 truncate">
+                          {apt.doctor.name} · {new Date(apt.date).toLocaleDateString('mn-MN', { month: 'short', day: 'numeric' })} · {apt.time}
+                        </p>
+                      </div>
+                      <StatusBadge status={apt.status} />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Selected Date Sidebar (for monthly view) */}
+      {/* Selected Date Sidebar */}
       {selectedDate && viewMode === 'month' && (
-        <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl z-40 overflow-y-auto">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {new Date(selectedDate).toLocaleDateString('mn-MN', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
+        <div className="fixed inset-y-0 right-0 w-80 bg-white border-l border-slate-200 shadow-xl z-40 overflow-y-auto animate-slide-in">
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-slate-900">
+                {new Date(selectedDate).toLocaleDateString('mn-MN', { year: 'numeric', month: 'long', day: 'numeric' })}
               </h3>
-              <button
-                onClick={() => setSelectedDate(null)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <button onClick={() => setSelectedDate(null)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
+                <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             {getAppointmentsForDate(selectedDate).length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Энэ өдөр захиалга байхгүй байна</p>
+              <p className="text-sm text-slate-400 text-center py-8">Энэ өдөр захиалга байхгүй</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {getAppointmentsForDate(selectedDate).map((apt) => (
-                  <div 
-                    key={apt.id} 
-                    className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  <div
+                    key={apt.id}
+                    className="p-3 border border-slate-200/80 rounded-lg hover:border-slate-300 transition-colors cursor-pointer"
                     onClick={() => setSelectedAppointment(apt)}
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="text-lg font-medium text-gray-900">{apt.time}</div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-slate-900 font-mono">{apt.time}</span>
                       <StatusBadge status={apt.status} />
                     </div>
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <span className="text-gray-500">Өвчтөн:</span>{' '}
-                        <span className="font-medium">{apt.patient.name}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Эмч:</span>{' '}
-                        <span>{apt.doctor.name}</span>
-                      </div>
-                    </div>
+                    <p className="text-sm text-slate-700">{apt.patient.name}</p>
+                    <p className="text-xs text-slate-400">{apt.doctor.name}</p>
                   </div>
                 ))}
               </div>

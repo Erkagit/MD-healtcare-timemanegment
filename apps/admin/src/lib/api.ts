@@ -1,46 +1,142 @@
-// Admin API Client
+// ==========================================
+// Admin API Client — MD Health Care
+// Production-grade fetch with auth, error
+// handling, structured logging
+// ==========================================
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
-console.log('[API] Using API_URL:', API_URL);
+// ==========================================
+// Custom API Error
+// ==========================================
+export class ApiError extends Error {
+  public status: number;
+  public code: string;
+  public details: unknown;
 
-// Get token from localStorage (client-side only)
-const getToken = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('admin_token');
+  constructor(message: string, status: number, code = 'API_ERROR', details?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.details = details;
   }
-  return null;
+
+  get isAuthError() {
+    return this.status === 401 || this.status === 403;
+  }
+
+  get isNetworkError() {
+    return this.code === 'NETWORK_ERROR';
+  }
+
+  get isServerError() {
+    return this.status >= 500;
+  }
+}
+
+// ==========================================
+// Auth token helpers
+// ==========================================
+const getToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('admin_token');
 };
 
-// Generic fetch wrapper with auth
+const clearAuth = () => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('admin_token');
+  localStorage.removeItem('admin_user');
+};
+
+/** Fires custom event so AuthProvider redirects to /login */
+const dispatchAuthError = (status: number, message: string) => {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent('auth:error', { detail: { status, message } })
+  );
+};
+
+// ==========================================
+// Core fetch wrapper
+// ==========================================
 async function fetchAPI<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<T> {
   const token = getToken();
   const url = `${API_URL}${endpoint}`;
-  
-  console.log('[API] Fetching:', url);
-  
+  const method = options?.method || 'GET';
+
+  console.log(`[API] ${method} ${endpoint}`);
+
   try {
     const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options?.headers,
       },
     });
 
-    const data = await response.json();
+    // --- Parse response body safely (handle non-JSON) ---
+    let data: Record<string, unknown> | unknown;
+    const contentType = response.headers.get('content-type') || '';
 
-    if (!response.ok) {
-      throw new Error(data.error || 'API request failed');
+    if (contentType.includes('application/json')) {
+      try {
+        data = await response.json();
+      } catch {
+        console.error(`[API] Failed to parse JSON from ${endpoint}`);
+        data = { error: 'Invalid JSON response from server' };
+      }
+    } else {
+      const text = await response.text();
+      console.error(
+        `[API] Non-JSON response (${response.status}) from ${endpoint}:`,
+        text.substring(0, 300)
+      );
+      data = { error: `Server returned unexpected response (${response.status})` };
     }
 
-    return data;
+    // --- Handle 401/403 — auth failures ---
+    if (response.status === 401 || response.status === 403) {
+      const errorMsg =
+        (data as Record<string, string>)?.error ||
+        'Нэвтрэлт шаардлагатай — дахин нэвтэрнэ үү';
+
+      console.error(`[API] Auth failed (${response.status}) ${endpoint}: ${errorMsg}`);
+      clearAuth();
+      dispatchAuthError(response.status, errorMsg);
+      throw new ApiError(errorMsg, response.status, 'AUTH_ERROR');
+    }
+
+    // --- Handle other HTTP errors ---
+    if (!response.ok) {
+      const errorMsg =
+        (data as Record<string, string>)?.error ||
+        (data as Record<string, string>)?.message ||
+        `Request failed (${response.status})`;
+
+      console.error(`[API] Error (${response.status}) ${endpoint}: ${errorMsg}`);
+      throw new ApiError(errorMsg, response.status, 'REQUEST_ERROR', data);
+    }
+
+    console.log(`[API] ✓ ${method} ${endpoint}`);
+    return data as T;
   } catch (err) {
-    console.error('[API] Error:', err);
-    throw err;
+    // Re-throw our own errors
+    if (err instanceof ApiError) throw err;
+
+    // Network / DNS / timeout errors
+    const message =
+      err instanceof TypeError && err.message.includes('fetch')
+        ? 'Сервертэй холбогдож чадсангүй. Интернет холболтоо шалгана уу.'
+        : (err as Error).message || 'Unknown network error';
+
+    console.error(`[API] Network error on ${endpoint}:`, err);
+    throw new ApiError(message, 0, 'NETWORK_ERROR', err);
   }
 }
 
@@ -166,42 +262,42 @@ export const paymentsAPI = {
 // Services APIs (Admin - includes prices)
 export const servicesAPI = {
   getCategories: () =>
-    fetchAPI<ServiceCategory[]>('/services/categories/admin'),
+    fetchAPI<{ success: boolean; data: ServiceCategory[] }>('/services/categories/admin'),
 
   getAll: () =>
-    fetchAPI<Service[]>('/services/admin/all'),
+    fetchAPI<{ success: boolean; data: Service[] }>('/services/admin/all'),
 
   createCategory: (data: CreateCategoryInput) =>
-    fetchAPI<ServiceCategory>('/services/categories', {
+    fetchAPI<{ success: boolean; data: ServiceCategory }>('/services/categories', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   updateCategory: (id: string, data: UpdateCategoryInput) =>
-    fetchAPI<ServiceCategory>(`/services/categories/${id}`, {
+    fetchAPI<{ success: boolean; data: ServiceCategory }>(`/services/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   deleteCategory: (id: string) =>
-    fetchAPI<{ message: string }>(`/services/categories/${id}`, {
+    fetchAPI<{ success: boolean; message: string }>(`/services/categories/${id}`, {
       method: 'DELETE',
     }),
 
   createService: (data: CreateServiceInput) =>
-    fetchAPI<Service>('/services', {
+    fetchAPI<{ success: boolean; data: Service }>('/services', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   updateService: (id: string, data: UpdateServiceInput) =>
-    fetchAPI<Service>(`/services/${id}`, {
+    fetchAPI<{ success: boolean; data: Service }>(`/services/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   deleteService: (id: string) =>
-    fetchAPI<{ message: string }>(`/services/${id}`, {
+    fetchAPI<{ success: boolean; message: string }>(`/services/${id}`, {
       method: 'DELETE',
     }),
 };

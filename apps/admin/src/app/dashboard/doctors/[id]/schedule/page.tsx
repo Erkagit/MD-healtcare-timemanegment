@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 import { adminAPI, schedulesAPI, type Schedule } from '@/lib/api';
 
 const DAYS = [
-  { value: 'MONDAY', label: 'Даваа' },
-  { value: 'TUESDAY', label: 'Мягмар' },
-  { value: 'WEDNESDAY', label: 'Лхагва' },
-  { value: 'THURSDAY', label: 'Пүрэв' },
-  { value: 'FRIDAY', label: 'Баасан' },
-  { value: 'SATURDAY', label: 'Бямба' },
-  { value: 'SUNDAY', label: 'Ням' },
+  { value: 'MONDAY', label: 'Даваа', short: 'Да' },
+  { value: 'TUESDAY', label: 'Мягмар', short: 'Мя' },
+  { value: 'WEDNESDAY', label: 'Лхагва', short: 'Лх' },
+  { value: 'THURSDAY', label: 'Пүрэв', short: 'Пү' },
+  { value: 'FRIDAY', label: 'Баасан', short: 'Ба' },
+  { value: 'SATURDAY', label: 'Бямба', short: 'Бя' },
+  { value: 'SUNDAY', label: 'Ням', short: 'Ня' },
 ];
 
 interface ScheduleForm {
@@ -48,7 +48,6 @@ export default function DoctorSchedulePage({ params }: { params: { id: string } 
 
         setDoctorName(doctorRes.data.name);
 
-        // Merge existing schedules with default form
         const existingSchedules = schedulesRes.data;
         setSchedules((prev) =>
           prev.map((form) => {
@@ -119,112 +118,108 @@ export default function DoctorSchedulePage({ params }: { params: { id: string } 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-brand-600 border-t-transparent rounded-full" />
+        <div className="w-7 h-7 border-2 border-blush-200 border-t-blush-500 rounded-full animate-spin" />
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <button
-          onClick={() => router.back()}
-          className="text-gray-500 hover:text-brand-600 flex items-center transition-colors"
-        >
-          <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Буцах
-        </button>
-      </div>
+  const activeDays = schedules.filter((s) => s.enabled).length;
 
-      <div className="max-w-4xl">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Ажлын хуваарь</h1>
-          <p className="text-gray-500 mt-1">{doctorName} эмчийн долоо хоногийн хуваарь</p>
+  return (
+    <div className="space-y-5 animate-fade-in">
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
+        Буцах
+      </button>
+
+      <div className="max-w-3xl">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h1 className="text-lg font-bold text-slate-900">Ажлын хуваарь</h1>
+            <p className="text-sm text-slate-500 mt-0.5">{doctorName} · {activeDays} өдөр идэвхтэй</p>
+          </div>
         </div>
 
-        <div className="bg-white rounded-card shadow-card p-6">
+        <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 flex items-center gap-3">
-              <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="alert alert-error mx-5 mt-5">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
               </svg>
-              {error}
+              <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit}>
-            <div className="space-y-3">
+            <div className="divide-y divide-slate-100">
               {DAYS.map((day) => {
                 const schedule = schedules.find((s) => s.dayOfWeek === day.value)!;
                 return (
                   <div
                     key={day.value}
-                    className={`p-4 border rounded-xl transition-all ${
-                      schedule.enabled 
-                        ? 'border-brand-200 bg-gradient-to-r from-brand-50 to-white shadow-sm' 
-                        : 'border-gray-100 bg-surface-50'
+                    className={`px-5 py-3.5 transition-colors ${
+                      schedule.enabled ? 'bg-white' : 'bg-slate-50/50'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id={day.value}
-                          checked={schedule.enabled}
-                          onChange={(e) =>
-                            handleScheduleChange(day.value, 'enabled', e.target.checked)
-                          }
-                          className="h-5 w-5 text-brand-600 focus:ring-brand-500 border-gray-300 rounded transition-colors"
-                        />
-                        <label
-                          htmlFor={day.value}
-                          className={`ml-3 font-medium w-20 ${schedule.enabled ? 'text-brand-700' : 'text-gray-500'}`}
-                        >
+                    <div className="flex items-center gap-4">
+                      {/* Day toggle */}
+                      <label className="flex items-center gap-3 cursor-pointer flex-shrink-0 min-w-[100px]">
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            checked={schedule.enabled}
+                            onChange={(e) =>
+                              handleScheduleChange(day.value, 'enabled', e.target.checked)
+                            }
+                            className="sr-only peer"
+                          />
+                          <div className="w-8 h-[18px] bg-slate-300 rounded-full peer-checked:bg-blush-500 transition-colors" />
+                          <div className="absolute top-[1px] left-[1px] w-4 h-4 bg-white rounded-full peer-checked:translate-x-[14px] transition-transform shadow-sm" />
+                        </div>
+                        <span className={`text-sm font-medium ${schedule.enabled ? 'text-slate-900' : 'text-slate-400'}`}>
                           {day.label}
-                        </label>
-                        {schedule.enabled && (
-                          <span className="badge badge-success ml-2">Идэвхтэй</span>
-                        )}
-                      </div>
+                        </span>
+                      </label>
 
-                      {schedule.enabled && (
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <label className="text-sm text-gray-500">Эхлэх:</label>
+                      {/* Time inputs */}
+                      {schedule.enabled ? (
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-slate-400">Эхлэх</span>
                             <input
                               type="time"
                               value={schedule.startTime}
                               onChange={(e) =>
                                 handleScheduleChange(day.value, 'startTime', e.target.value)
                               }
-                              className="px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"
+                              className="px-2 py-1 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blush-500/10 focus:border-blush-300"
                             />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <label className="text-sm text-gray-500">Дуусах:</label>
+                          <span className="text-slate-300">—</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-slate-400">Дуусах</span>
                             <input
                               type="time"
                               value={schedule.endTime}
                               onChange={(e) =>
                                 handleScheduleChange(day.value, 'endTime', e.target.value)
                               }
-                              className="px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"
+                              className="px-2 py-1 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blush-500/10 focus:border-blush-300"
                             />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <label className="text-sm text-gray-500">Үзлэг:</label>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-slate-400">Үзлэг</span>
                             <select
                               value={schedule.slotDuration}
                               onChange={(e) =>
-                                handleScheduleChange(
-                                  day.value,
-                                  'slotDuration',
-                                  parseInt(e.target.value)
-                                )
+                                handleScheduleChange(day.value, 'slotDuration', parseInt(e.target.value))
                               }
-                              className="px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"
+                              className="px-2 py-1 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blush-500/10 focus:border-blush-300"
                             >
                               <option value={15}>15 мин</option>
                               <option value={20}>20 мин</option>
@@ -234,6 +229,8 @@ export default function DoctorSchedulePage({ params }: { params: { id: string } 
                             </select>
                           </div>
                         </div>
+                      ) : (
+                        <span className="text-xs text-slate-300">Амралтын өдөр</span>
                       )}
                     </div>
                   </div>
@@ -241,22 +238,14 @@ export default function DoctorSchedulePage({ params }: { params: { id: string } 
               })}
             </div>
 
-            <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="btn-secondary"
-              >
+            <div className="flex justify-end gap-2 px-5 py-4 border-t border-slate-100 bg-slate-50/50">
+              <button type="button" onClick={() => router.back()} className="btn btn-secondary btn-sm">
                 Цуцлах
               </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="btn-primary"
-              >
+              <button type="submit" disabled={saving} className="btn btn-primary btn-sm">
                 {saving ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>

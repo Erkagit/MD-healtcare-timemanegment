@@ -5,23 +5,22 @@ import Link from 'next/link';
 import { adminAPI, type DashboardStats, type AppointmentWithDetails } from '@/lib/api';
 
 // ==========================================
-// MD HEALTH CARE - ADMIN DASHBOARD
-// Premium SaaS design, consistent with public site
+// MD HEALTH CARE — ADMIN DASHBOARD
+// Clean KPI overview + recent activity
 // ==========================================
 
-// Status badge with new brand colors
 const StatusBadge = ({ status }: { status: string }) => {
   const styles: Record<string, string> = {
     PENDING: 'badge badge-pending',
-    PAID: 'bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full text-xs font-semibold',
+    PAID: 'badge badge-info',
     CONFIRMED: 'badge badge-confirmed',
     COMPLETED: 'badge badge-completed',
-    NO_SHOW: 'bg-orange-100 text-orange-800 px-2.5 py-1 rounded-full text-xs font-semibold',
+    NO_SHOW: 'badge badge-warning',
     CANCELLED: 'badge badge-cancelled',
   };
 
   const labels: Record<string, string> = {
-    PENDING: 'Төлбөр хүлээгдэж буй',
+    PENDING: 'Хүлээгдэж буй',
     PAID: 'Төлбөр орсон',
     CONFIRMED: 'Баталгаажсан',
     COMPLETED: 'Дууссан',
@@ -36,26 +35,14 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-// Skeleton loader for cards
 const StatCardSkeleton = () => (
-  <div className="bg-white rounded-card p-6 animate-pulse">
-    <div className="flex items-center gap-4">
-      <div className="w-14 h-14 rounded-2xl bg-gray-100" />
-      <div className="flex-1 space-y-2">
-        <div className="h-4 bg-gray-100 rounded w-24" />
-        <div className="h-7 bg-gray-100 rounded w-16" />
-      </div>
+  <div className="kpi-card">
+    <div className="flex items-center justify-between mb-4">
+      <div className="skeleton w-20 h-3 rounded" />
+      <div className="skeleton w-9 h-9 rounded-lg" />
     </div>
-  </div>
-);
-
-// Empty state component
-const EmptyState = ({ message }: { message: string }) => (
-  <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-    <svg className="w-16 h-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-    <p className="text-sm">{message}</p>
+    <div className="skeleton w-14 h-7 rounded mb-1" />
+    <div className="skeleton w-24 h-3 rounded" />
   </div>
 );
 
@@ -70,8 +57,9 @@ export default function DashboardPage() {
         const response = await adminAPI.getStats();
         setStats(response.data);
       } catch (err) {
-        setError('Мэдээлэл ачаалахад алдаа гарлаа');
-        console.error(err);
+        const message = err instanceof Error ? err.message : 'Мэдээлэл ачаалахад алдаа гарлаа';
+        setError(message);
+        console.error('[Dashboard] Load error:', err);
       } finally {
         setLoading(false);
       }
@@ -80,278 +68,273 @@ export default function DashboardPage() {
     loadStats();
   }, []);
 
-  // Stat card configurations with brand colors
   const statCards = [
     {
       label: 'Нийт эмч',
       value: stats?.totalDoctors || 0,
-      subLabel: `${stats?.activeDoctors || 0} идэвхтэй`,
+      sub: `${stats?.activeDoctors || 0} идэвхтэй`,
       icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+        <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
         </svg>
       ),
-      bgColor: 'bg-brand-50',
-      iconColor: 'text-brand-600',
+      color: 'text-blush-600 bg-blush-50',
       href: '/dashboard/doctors',
     },
     {
       label: 'Нийт өвчтөн',
       value: stats?.totalPatients || 0,
       icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
         </svg>
       ),
-      bgColor: 'bg-accent-50',
-      iconColor: 'text-accent-600',
+      color: 'text-emerald-600 bg-emerald-50',
     },
     {
       label: 'Өнөөдрийн захиалга',
       value: stats?.todayAppointments || 0,
       icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
         </svg>
       ),
-      bgColor: 'bg-purple-50',
-      iconColor: 'text-purple-600',
+      color: 'text-blue-600 bg-blue-50',
       href: '/dashboard/appointments',
     },
     {
       label: 'Хүлээгдэж буй',
       value: stats?.pendingAppointments || 0,
       icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      bgColor: 'bg-amber-50',
-      iconColor: 'text-amber-600',
+      color: 'text-amber-600 bg-amber-50',
       href: '/dashboard/appointments?status=PENDING',
     },
   ];
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-100 rounded-card p-6 text-red-700">
-        <div className="flex items-center gap-3">
-          <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {error}
-        </div>
+      <div className="alert alert-error">
+        <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+        </svg>
+        <span>{error}</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Хянах самбар</h1>
-          <p className="text-gray-500 mt-1">Өнөөдрийн тойм мэдээлэл</p>
+          <h1 className="text-lg font-bold text-slate-900">Хянах самбар</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Өнөөдрийн тойм мэдээлэл</p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-400">
-            {new Date().toLocaleDateString('mn-MN', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </span>
-        </div>
+        <span className="text-xs text-slate-400 font-medium">
+          {new Date().toLocaleDateString('mn-MN', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })}
+        </span>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        {loading ? (
-          <>
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-          </>
-        ) : (
-          statCards.map((stat) => (
-            <div 
-              key={stat.label} 
-              className="bg-white rounded-card shadow-card hover:shadow-card-hover transition-all duration-200 p-6 group"
-            >
-              {stat.href ? (
-                <Link href={stat.href} className="block">
-                  <StatCardContent stat={stat} />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+          : statCards.map((stat) => {
+              const inner = (
+                <div className="kpi-card group hover:border-slate-200 transition-all">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="kpi-label">{stat.label}</span>
+                    <div className={`kpi-icon ${stat.color}`}>{stat.icon}</div>
+                  </div>
+                  <p className="kpi-value">{stat.value.toLocaleString()}</p>
+                  {stat.sub && (
+                    <p className="text-xs text-slate-400 mt-0.5">{stat.sub}</p>
+                  )}
+                </div>
+              );
+              return stat.href ? (
+                <Link key={stat.label} href={stat.href} className="block">
+                  {inner}
                 </Link>
               ) : (
-                <StatCardContent stat={stat} />
-              )}
-            </div>
-          ))
-        )}
+                <div key={stat.label}>{inner}</div>
+              );
+            })}
       </div>
 
-      {/* Recent Appointments */}
-      <div className="bg-white rounded-card shadow-card overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+      {/* Recent Appointments Table */}
+      <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Сүүлийн захиалгууд</h2>
-            <p className="text-sm text-gray-400 mt-0.5">Хамгийн сүүлд ирсэн захиалгууд</p>
+            <h2 className="text-sm font-semibold text-slate-900">Сүүлийн захиалгууд</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Хамгийн сүүлд ирсэн захиалгууд</p>
           </div>
           <Link
             href="/dashboard/appointments"
-            className="inline-flex items-center gap-2 text-brand-600 hover:text-brand-700 text-sm font-medium transition-colors"
+            className="text-xs font-semibold text-slate-500 hover:text-blush-600 transition-colors flex items-center gap-1"
           >
             Бүгдийг харах
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </Link>
         </div>
-        
+
         {loading ? (
-          <div className="p-6 space-y-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 animate-pulse">
-                <div className="w-10 h-10 rounded-full bg-gray-100" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-100 rounded w-32" />
-                  <div className="h-3 bg-gray-100 rounded w-48" />
+          <div className="p-5 space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 animate-pulse">
+                <div className="w-8 h-8 rounded-lg bg-slate-100" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 bg-slate-100 rounded w-28" />
+                  <div className="h-3 bg-slate-100 rounded w-40" />
                 </div>
-                <div className="w-20 h-6 bg-gray-100 rounded-full" />
+                <div className="w-16 h-5 bg-slate-100 rounded-full" />
               </div>
             ))}
           </div>
         ) : stats?.recentAppointments && stats.recentAppointments.length > 0 ? (
-          <div className="divide-y divide-gray-50">
-            {stats.recentAppointments.map((apt: AppointmentWithDetails) => (
-              <div 
-                key={apt.id} 
-                className="px-6 py-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-brand-100 to-brand-200 rounded-full flex items-center justify-center">
-                    <span className="text-brand-700 font-medium text-sm">
-                      {apt.patient.name.charAt(0).toUpperCase()}
-                    </span>
+          /* Desktop table */
+          <>
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead>
+                  <tr className="table-header">
+                    <th className="table-th">Өвчтөн</th>
+                    <th className="table-th">Эмч</th>
+                    <th className="table-th">Огноо</th>
+                    <th className="table-th">Цаг</th>
+                    <th className="table-th text-right">Төлөв</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {stats.recentAppointments.map((apt: AppointmentWithDetails) => (
+                    <tr key={apt.id} className="table-row">
+                      <td className="table-td">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-600 flex-shrink-0">
+                            {apt.patient.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="font-medium text-slate-900 text-sm">{apt.patient.name}</span>
+                        </div>
+                      </td>
+                      <td className="table-td text-slate-500 text-sm">
+                        {apt.doctor.name}
+                      </td>
+                      <td className="table-td text-slate-500 text-sm">
+                        {new Date(apt.date).toLocaleDateString('mn-MN', { month: 'short', day: 'numeric' })}
+                      </td>
+                      <td className="table-td text-slate-500 text-sm font-mono">
+                        {apt.time}
+                      </td>
+                      <td className="table-td text-right">
+                        <StatusBadge status={apt.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile list */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {stats.recentAppointments.map((apt: AppointmentWithDetails) => (
+                <div key={apt.id} className="px-4 py-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-600 flex-shrink-0">
+                    {apt.patient.name.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{apt.patient.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {apt.doctor.name} • {apt.doctor.specialization}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 truncate">{apt.patient.name}</p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {apt.doctor.name} · {new Date(apt.date).toLocaleDateString('mn-MN', { month: 'short', day: 'numeric' })} · {apt.time}
                     </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-700">
-                      {new Date(apt.date).toLocaleDateString('mn-MN', { month: 'short', day: 'numeric' })}
-                    </p>
-                    <p className="text-xs text-gray-400">{apt.time}</p>
                   </div>
                   <StatusBadge status={apt.status} />
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         ) : (
-          <EmptyState message="Захиалга байхгүй байна" />
+          <div className="empty-state">
+            <svg className="w-10 h-10 text-slate-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+            </svg>
+            <p className="text-sm text-slate-400">Захиалга байхгүй байна</p>
+          </div>
         )}
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <QuickActionCard
           href="/dashboard/doctors/new"
           icon={
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
             </svg>
           }
           title="Эмч нэмэх"
           description="Шинэ эмч бүртгэх"
-          color="brand"
         />
         <QuickActionCard
           href="/dashboard/appointments"
           icon={
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
             </svg>
           }
           title="Хуанли харах"
           description="Долоо хоногийн хуваарь"
-          color="accent"
         />
         <QuickActionCard
           href="/dashboard/services"
           icon={
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" />
             </svg>
           }
           title="Үйлчилгээ удирдах"
           description="Үйлчилгээний жагсаалт"
-          color="purple"
         />
       </div>
     </div>
   );
 }
 
-// Stat card content component
-function StatCardContent({ stat }: { stat: { label: string; value: number; subLabel?: string; icon: React.ReactNode; bgColor: string; iconColor: string } }) {
-  return (
-    <div className="flex items-center gap-4">
-      <div className={`w-14 h-14 rounded-2xl ${stat.bgColor} flex items-center justify-center ${stat.iconColor}`}>
-        {stat.icon}
-      </div>
-      <div>
-        <p className="text-sm text-gray-500">{stat.label}</p>
-        <p className="text-2xl font-bold text-gray-900">{stat.value.toLocaleString()}</p>
-        {stat.subLabel && (
-          <p className="text-xs text-gray-400 mt-0.5">{stat.subLabel}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Quick action card component
-function QuickActionCard({ 
-  href, 
-  icon, 
-  title, 
-  description, 
-  color 
-}: { 
-  href: string; 
-  icon: React.ReactNode; 
-  title: string; 
+function QuickActionCard({
+  href,
+  icon,
+  title,
+  description,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
   description: string;
-  color: 'brand' | 'accent' | 'purple';
 }) {
-  const colors = {
-    brand: 'bg-brand-50 text-brand-600 group-hover:bg-brand-100',
-    accent: 'bg-accent-50 text-accent-600 group-hover:bg-accent-100',
-    purple: 'bg-purple-50 text-purple-600 group-hover:bg-purple-100',
-  };
-
   return (
     <Link
       href={href}
-      className="bg-white rounded-card shadow-card hover:shadow-card-hover transition-all duration-200 p-5 flex items-center gap-4 group"
+      className="flex items-center gap-3 p-4 bg-white border border-slate-200/80 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all group"
     >
-      <div className={`w-12 h-12 rounded-xl ${colors[color]} flex items-center justify-center transition-colors`}>
+      <div className="w-9 h-9 rounded-lg bg-blush-50 text-blush-500 group-hover:bg-gradient-to-br group-hover:from-blush-500 group-hover:to-blush-400 group-hover:text-white flex items-center justify-center transition-all flex-shrink-0">
         {icon}
       </div>
-      <div>
-        <p className="font-medium text-gray-900 group-hover:text-brand-600 transition-colors">{title}</p>
-        <p className="text-sm text-gray-400">{description}</p>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-900">{title}</p>
+        <p className="text-xs text-slate-400">{description}</p>
       </div>
-      <svg className="w-5 h-5 text-gray-300 ml-auto group-hover:text-brand-500 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+      <svg className="w-4 h-4 text-slate-300 ml-auto group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
       </svg>
     </Link>
   );
