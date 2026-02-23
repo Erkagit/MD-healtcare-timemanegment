@@ -344,7 +344,7 @@ function BookingPageContent() {
               {categories.length === 0 ? (
                 <div className="text-center py-12 text-blush-400">
                   <div className="animate-spin h-8 w-8 border-3 border-blush-300 border-t-transparent rounded-full mx-auto mb-3" />
-                  Ачаалж байна...
+                  Ачааллаж байна...
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -462,7 +462,7 @@ function BookingPageContent() {
               {doctors.length === 0 ? (
                 <div className="text-center py-12 text-blush-400">
                   <div className="animate-spin h-8 w-8 border-3 border-blush-300 border-t-transparent rounded-full mx-auto mb-3" />
-                  Эмч нарыг ачаалж байна...
+                  Эмч нарыг ачааллаж байна...
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4">
@@ -547,7 +547,7 @@ function BookingPageContent() {
                   {slotsLoading ? (
                     <div className="text-center py-6 text-blush-400">
                       <div className="animate-spin h-6 w-6 border-2 border-blush-300 border-t-transparent rounded-full mx-auto mb-2" />
-                      Ачаалж байна...
+                      Ачааллаж байна...
                     </div>
                   ) : slots.length === 0 ? (
                     <div className="text-center py-8 rounded-2xl bg-cream-50 border border-cream-200">
