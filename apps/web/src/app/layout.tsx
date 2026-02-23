@@ -102,11 +102,13 @@ export default function RootLayout({
                   {/* Brand */}
                   <div className="md:col-span-5">
                     <div className="flex items-center space-x-3 mb-6">
-                      <img 
-                        src="/logo.jpg" 
-                        alt="MD Health Care Center"
-                        className="h-9 w-auto brightness-0 invert opacity-90"
-                      />
+                      <div className="bg-white rounded-xl px-3 py-1.5">
+                        <img 
+                          src="/logo.jpg" 
+                          alt="MD Health Care Center"
+                          className="h-8 w-auto"
+                        />
+                      </div>
                     </div>
                     <p className="text-blush-200/80 leading-relaxed mb-6 max-w-sm">
                       2017 оноос эмэгтэйчүүдийн эрүүл мэндийн чиглэлээр олон улсын стандартад нийцсэн 
