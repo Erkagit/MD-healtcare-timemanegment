@@ -393,7 +393,7 @@ export default function ServicesPage() {
               Онлайн цаг захиалах
             </Link>
             <a
-              href="tel:+97677000000"
+              href="tel:+97677301919"
               className="btn-secondary inline-flex items-center justify-center gap-2 px-10 py-5 text-lg"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -407,7 +407,7 @@ export default function ServicesPage() {
               <svg className="w-5 h-5 text-blush-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Даваа – Бямба: 09:00 – 18:00
+              Даваа – Баасан: 08:30 – 20:30 | Амралт: 10:00 – 18:00
             </div>
             <div className="w-1 h-1 rounded-full bg-blush-300 hidden sm:block" />
             <div className="flex items-center gap-2">

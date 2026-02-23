@@ -7,8 +7,8 @@
 :root {
   --font-primary: 'Nunito', system-ui, -apple-system, sans-serif;
   --font-display: 'Quicksand', system-ui, -apple-system, sans-serif;
-  --foreground-rgb: 55, 40, 50;
-  --background-rgb: 254, 253, 251;
+  --foreground-rgb: 50, 60, 58;
+  --background-rgb: 251, 252, 251;
 }
 
 @layer base {
@@ -34,8 +34,8 @@
   }
 
   ::selection {
-    background-color: rgba(234, 86, 114, 0.15);
-    color: #80213d;
+    background-color: rgba(23, 184, 173, 0.12);
+    color: #134e4a;
   }
 
   /* Prevent SVG baseline whitespace in wave dividers */
@@ -62,38 +62,38 @@
   .bg-hero-gradient {
     background: linear-gradient(
       135deg,
-      #fef7f7 0%,
-      #fdeef0 20%,
-      #f0ecf9 50%,
-      #fff5f3 80%,
-      #fdfcfa 100%
+      #f0fdfc 0%,
+      #e4faf5 20%,
+      #f0f5f3 50%,
+      #faf8f2 80%,
+      #fafaf9 100%
     );
   }
 
   .bg-section-warm {
     background: linear-gradient(
       180deg,
-      #fdfcfa 0%,
-      #faf7f2 50%,
-      #fdfcfa 100%
+      #fbfcfb 0%,
+      #f7f9f7 50%,
+      #fbfcfb 100%
     );
   }
 
   .bg-section-blush {
     background: linear-gradient(
       180deg,
-      #fef7f7 0%,
-      #fdeef0 50%,
-      #fef7f7 100%
+      #f0fdfc 0%,
+      #dff9f4 50%,
+      #f0fdfc 100%
     );
   }
 
   .bg-section-lavender {
     background: linear-gradient(
       180deg,
-      #f8f6fc 0%,
-      #f0ecf9 50%,
-      #f8f6fc 100%
+      #f4f7f6 0%,
+      #e6edea 50%,
+      #f4f7f6 100%
     );
   }
 
@@ -136,7 +136,7 @@
   }
 
   .decorative-dot-pattern {
-    background-image: radial-gradient(circle, rgba(234, 86, 114, 0.08) 1px, transparent 1px);
+    background-image: radial-gradient(circle, rgba(23, 184, 173, 0.06) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 
@@ -205,7 +205,7 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #f48295, #b49dde, #ffb8a8);
+    background: linear-gradient(90deg, #2dd4c8, #87a79c, #efb244);
     opacity: 0;
     transition: opacity 0.3s ease-out;
   }
@@ -236,17 +236,17 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #faf7f2;
+  background: #f5f5f3;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #fcd5db;
+  background: #b5e0da;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #f9b0bc;
+  background: #99f6ea;
 }
 
 /* Smooth Page Transitions */

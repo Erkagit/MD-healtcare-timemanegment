@@ -23,8 +23,8 @@
   --color-text: #0f172a;
   --color-text-secondary: #64748b;
   --color-text-muted: #94a3b8;
-  --color-accent: #ea5672;
-  --color-accent-soft: #fef7f7;
+  --color-accent: #17b8ad;
+  --color-accent-soft: #f0fdfc;
 }
 
 /* ==========================================
@@ -71,18 +71,18 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #fcd5db;
+  background: #b5e0da;
   border-radius: 100px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #f9b0bc;
+  background: #99f6ea;
 }
 
 /* Thin scrollbar for Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #fcd5db transparent;
+  scrollbar-color: #b5e0da transparent;
 }
 
 /* ==========================================
@@ -392,7 +392,7 @@
   100% { background-position: 200% 0; }
 }
 .shimmer {
-  background: linear-gradient(90deg, #fef7f7 25%, #fdeef0 50%, #fef7f7 75%);
+  background: linear-gradient(90deg, #f0fdfc 25%, #ccfbf4 50%, #f0fdfc 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }

@@ -13,44 +13,44 @@ module.exports = {
       // MD HEALTH CARE - UNIFIED DESIGN TOKENS
       // ==========================================
       colors: {
-        // Brand Primary (Pink/Rose - Medical Feminine)
+        // Brand Primary (Teal - Medical Professional)
         brand: {
-          50: '#fdf2f8',
-          100: '#fce7f3',
-          200: '#fbcfe8',
-          300: '#f9a8d4',
-          400: '#f472b6',
-          500: '#ec4899',
-          600: '#db2777',
-          700: '#be185d',
-          800: '#9d174d',
-          900: '#831843',
+          50: '#f0fdfc',
+          100: '#ccfbf4',
+          200: '#99f6ea',
+          300: '#5feadc',
+          400: '#2dd4c8',
+          500: '#17b8ad',
+          600: '#0d948c',
+          700: '#0f766f',
+          800: '#115e5a',
+          900: '#134e4a',
         },
         // Keep primary as alias for brand
         primary: {
-          50: '#fdf2f8',
-          100: '#fce7f3',
-          200: '#fbcfe8',
-          300: '#f9a8d4',
-          400: '#f472b6',
-          500: '#ec4899',
-          600: '#db2777',
-          700: '#be185d',
-          800: '#9d174d',
-          900: '#831843',
-        },
-        // Accent (Soft Teal - Trust & Health)
-        accent: {
-          50: '#f0fdfa',
-          100: '#ccfbf1',
-          200: '#99f6e4',
-          300: '#5eead4',
-          400: '#2dd4bf',
-          500: '#14b8a6',
-          600: '#0d9488',
-          700: '#0f766e',
-          800: '#115e59',
+          50: '#f0fdfc',
+          100: '#ccfbf4',
+          200: '#99f6ea',
+          300: '#5feadc',
+          400: '#2dd4c8',
+          500: '#17b8ad',
+          600: '#0d948c',
+          700: '#0f766f',
+          800: '#115e5a',
           900: '#134e4a',
+        },
+        // Accent (Warm Amber - Trust & Warmth)
+        accent: {
+          50: '#fefaf0',
+          100: '#fcf2d6',
+          200: '#f9e2ac',
+          300: '#f4cc77',
+          400: '#efb244',
+          500: '#e99a24',
+          600: '#d07918',
+          700: '#ad5a16',
+          800: '#8d4619',
+          900: '#743b19',
         },
         // Surface colors for backgrounds
         surface: {

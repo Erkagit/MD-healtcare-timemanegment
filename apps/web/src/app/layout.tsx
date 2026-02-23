@@ -24,13 +24,13 @@ export default function RootLayout({
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Даваа – Бямба: 09:00 – 18:00
+                    Даваа – Баасан: 08:30 – 20:30 | Амралтын өдөр: 10:00 – 18:00
                   </span>
                   <span className="inline-flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    +976 7700-0000
+                    7730-1919, 8619-3019
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -47,17 +47,12 @@ export default function RootLayout({
           <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-cream-100/80 shadow-soft">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center h-16 py-3">
-                <a href="/" className="flex items-center space-x-3 group">
-                  {/* Logo Mark */}
-                  <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-blush-400 to-blush-500 flex items-center justify-center shadow-glow group-hover:shadow-soft-lg transition-shadow duration-300">
-                    <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                    </svg>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-display font-bold text-lg text-blush-700 leading-tight tracking-tight">MD Health Care</span>
-                    <span className="text-[11px] text-blush-400 font-medium leading-tight tracking-wider uppercase">Эмэгтэйчүүдийн эмнэлэг</span>
-                  </div>
+                <a href="/" className="flex items-center group">
+                  <img 
+                    src="/logo.jpg" 
+                    alt="MD Health Care Center"
+                    className="h-9 sm:h-10 w-auto"
+                  />
                 </a>
 
                 <nav className="flex items-center gap-1">
@@ -97,7 +92,7 @@ export default function RootLayout({
                 {/* White fill covers entire SVG top area — prevents any bg bleed */}
                 <rect x="0" y="0" width="1440" height="60" fill="white" />
                 {/* Wave shape filled with footer color */}
-                <path d="M0,60 L0,20 Q360,60 720,20 Q1080,-20 1440,20 L1440,60 Z" fill="#962341" />
+                <path d="M0,60 L0,20 Q360,60 720,20 Q1080,-20 1440,20 L1440,60 Z" fill="#115e5a" />
               </svg>
             </div>
 
@@ -107,12 +102,11 @@ export default function RootLayout({
                   {/* Brand */}
                   <div className="md:col-span-5">
                     <div className="flex items-center space-x-3 mb-6">
-                      <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blush-400 to-blush-300 flex items-center justify-center">
-                        <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                        </svg>
-                      </div>
-                      <span className="font-display font-bold text-xl">MD Health Care Center</span>
+                      <img 
+                        src="/logo.jpg" 
+                        alt="MD Health Care Center"
+                        className="h-9 w-auto brightness-0 invert opacity-90"
+                      />
                     </div>
                     <p className="text-blush-200/80 leading-relaxed mb-6 max-w-sm">
                       2017 оноос эмэгтэйчүүдийн эрүүл мэндийн чиглэлээр олон улсын стандартад нийцсэн 
@@ -137,8 +131,8 @@ export default function RootLayout({
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                         </svg>
                         <div>
-                          <p className="font-medium text-white">+976 7700-0000</p>
-                          <p className="text-sm">Ажлын өдрүүдэд</p>
+                          <p className="font-medium text-white">7730-1919, 8619-3019</p>
+                          <p className="text-sm">Даваа – Ням</p>
                         </div>
                       </li>
                       <li className="flex items-start gap-3">
@@ -158,15 +152,11 @@ export default function RootLayout({
                     <div className="space-y-3 text-blush-200/80">
                       <div className="flex justify-between items-center py-2 border-b border-blush-700/40">
                         <span>Даваа – Баасан</span>
-                        <span className="font-medium text-white">09:00 – 18:00</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-blush-700/40">
-                        <span>Бямба</span>
-                        <span className="font-medium text-white">09:00 – 15:00</span>
+                        <span className="font-medium text-white">08:30 – 20:30</span>
                       </div>
                       <div className="flex justify-between items-center py-2">
-                        <span>Ням</span>
-                        <span className="font-medium text-blush-300">Амарна</span>
+                        <span>Бямба – Ням</span>
+                        <span className="font-medium text-white">10:00 – 18:00</span>
                       </div>
                     </div>
 
