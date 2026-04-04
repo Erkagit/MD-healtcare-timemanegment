@@ -272,4 +272,72 @@ router.put(
   }
 );
 
+// ==========================================
+// DELETE /api/admin/appointments/:id - Hard delete appointment (Admin only)
+// ==========================================
+router.delete('/appointments/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id },
+      include: { payments: true },
+    });
+
+    if (!appointment) {
+      throw new AppError('Захиалга олдсонгүй', 404);
+    }
+
+    // Delete associated payments first
+    if (appointment.payments.length > 0) {
+      await prisma.payment.deleteMany({
+        where: { appointmentId: id },
+      });
+    }
+
+    // Hard delete the appointment
+    await prisma.appointment.delete({
+      where: { id },
+    });
+
+    res.json({
+      success: true,
+      message: 'Захиалга бүрэн устгагдлаа',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==========================================
+// DELETE /api/admin/appointments/bulk/delete - Bulk hard delete (Admin only)
+// ==========================================
+router.post('/appointments/bulk/delete', async (req, res, next) => {
+  try {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      throw new AppError('Устгах захиалгын ID-ууд шаардлагатай', 400);
+    }
+
+    // Delete payments first
+    await prisma.payment.deleteMany({
+      where: { appointmentId: { in: ids } },
+    });
+
+    // Then delete appointments
+    const result = await prisma.appointment.deleteMany({
+      where: { id: { in: ids } },
+    });
+
+    res.json({
+      success: true,
+      message: `${result.count} захиалга бүрэн устгагдлаа`,
+      deletedCount: result.count,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
