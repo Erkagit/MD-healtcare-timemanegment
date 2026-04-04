@@ -342,6 +342,37 @@ router.patch(
       const { id } = req.params;
       const { status } = req.body;
 
+      // Get current appointment with payments
+      const current = await prisma.appointment.findUnique({
+        where: { id },
+        include: { payments: { orderBy: { createdAt: 'desc' } } },
+      });
+
+      if (!current) {
+        throw new AppError('Захиалга олдсонгүй', 404);
+      }
+
+      // ── Valid state transition enforcement ──
+      // CONFIRMED зөвхөн PAID статустай үед (төлбөр төлөгдсөн байх ёстой)
+      if (status === 'CONFIRMED' && current.status !== 'PAID') {
+        throw new AppError('Зөвхөн төлбөр төлөгдсөн захиалгыг баталгаажуулах боломжтой', 400);
+      }
+
+      // COMPLETED зөвхөн CONFIRMED статусаас
+      if (status === 'COMPLETED' && current.status !== 'CONFIRMED') {
+        throw new AppError('Зөвхөн баталгаажсан захиалгыг дуусгах боломжтой', 400);
+      }
+
+      // NO_SHOW зөвхөн CONFIRMED статусаас
+      if (status === 'NO_SHOW' && current.status !== 'CONFIRMED') {
+        throw new AppError('Зөвхөн баталгаажсан захиалгад ирээгүй гэж тэмдэглэх боломжтой', 400);
+      }
+
+      // Дууссан/цуцлагдсан захиалга өөрчлөх боломжгүй
+      if (['COMPLETED', 'NO_SHOW', 'CANCELLED'].includes(current.status)) {
+        throw new AppError('Энэ захиалгын статус өөрчлөх боломжгүй', 400);
+      }
+
       const appointment = await prisma.appointment.update({
         where: { id },
         data: { status },
