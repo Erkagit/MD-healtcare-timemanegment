@@ -84,7 +84,7 @@ router.post(
           doctorId,
           date: appointmentDate,
           time,
-          status: { in: ['PENDING', 'CONFIRMED'] },
+          status: { in: ['PENDING', 'PAID', 'CONFIRMED'] },
         },
       });
 

@@ -86,10 +86,14 @@ export default async function ConfirmationPage({
               <div className="absolute -top-1 -right-1 w-6 h-6 bg-blush-200 rounded-lg rotate-12 opacity-60" />
             </div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-blush-900 mb-2">
-              Цаг амжилттай захиалагдлаа!
+              {appointment.status === 'PAID' || appointment.status === 'CONFIRMED'
+                ? 'Цаг амжилттай баталгаажлаа!'
+                : 'Цаг амжилттай захиалагдлаа!'}
             </h1>
             <p className="text-blush-600/60">
-              Таны захиалга хүлээн авагдлаа. Эмнэлгээс удахгүй холбогдох болно.
+              {appointment.status === 'PAID' || appointment.status === 'CONFIRMED'
+                ? 'Таны төлбөр амжилттай хүлээн авагдлаа. Цагтаа ирнэ үү.'
+                : 'Таны захиалга хүлээн авагдлаа. Эмнэлгээс удахгүй холбогдох болно.'}
             </p>
           </div>
 
@@ -138,10 +142,27 @@ export default async function ConfirmationPage({
               <div className="flex justify-between items-center">
                 <dt className="text-blush-600/60">Төлөв:</dt>
                 <dd>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200/50 rounded-xl text-sm font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    Хүлээгдэж буй
-                  </span>
+                  {appointment.status === 'PAID' || appointment.status === 'CONFIRMED' ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/50 rounded-xl text-sm font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      {appointment.status === 'PAID' ? 'Төлбөр төлөгдсөн' : 'Баталгаажсан'}
+                    </span>
+                  ) : appointment.status === 'COMPLETED' ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200/50 rounded-xl text-sm font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                      Дууссан
+                    </span>
+                  ) : appointment.status === 'CANCELLED' ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-50 text-red-700 border border-red-200/50 rounded-xl text-sm font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                      Цуцлагдсан
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200/50 rounded-xl text-sm font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                      Хүлээгдэж буй
+                    </span>
+                  )}
                 </dd>
               </div>
             </dl>

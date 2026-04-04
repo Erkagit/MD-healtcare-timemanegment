@@ -2,13 +2,12 @@
 // API SERVER ENTRY POINT - MD HEALTH CARE CENTER
 // ==========================================
 
+// ⚡ MUST be the first import — loads .env before any other module reads process.env
+import 'dotenv/config';
+
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 
 // Import routes
 import authRoutes from './routes/auth';

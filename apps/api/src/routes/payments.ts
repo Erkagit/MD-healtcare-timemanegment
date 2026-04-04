@@ -49,7 +49,7 @@ router.post(
         throw new AppError('Энэ захиалга төлбөр хүлээж байгаа төлөвт байхгүй байна', 400);
       }
 
-      // Check for existing active payment
+      // ── Idempotent: check for existing active PENDING payment ──
       const existingPayment = appointment.payments.find(
         (p) => p.status === 'PENDING' && p.type === 'BOOKING_FEE' && p.expiresAt && p.expiresAt > new Date()
       );
@@ -63,7 +63,7 @@ router.post(
             paymentId: existingPayment.id,
             amount: existingPayment.amount,
             qrCode: existingPayment.qrCode,
-            qrImage: existingPayment.qrCode, // qr_text stored here, but for existing we can re-check
+            qrImage: metadata?.qr_image || existingPayment.qrCode,
             qrUrl: existingPayment.qrUrl,
             invoiceId: existingPayment.invoiceId,
             expiresAt: existingPayment.expiresAt,
@@ -72,7 +72,7 @@ router.post(
         });
       }
 
-      // Generate QR Code via QPay
+      // ── QPay configured? ──
       if (!qpay.isConfigured()) {
         throw new AppError('QPay тохиргоо дутуу байна. Админтай холбогдоно уу.', 500);
       }
@@ -80,7 +80,7 @@ router.post(
       const senderInvoiceNo = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
       const expiresAt = new Date(Date.now() + QR_EXPIRY_MINUTES * 60 * 1000);
 
-      // Call QPay API to create invoice
+      // ── Call QPay V2 to create invoice ──
       const qpayInvoice = await qpay.createInvoice({
         senderInvoiceNo,
         invoiceReceiverCode: appointment.patient.phone,
@@ -88,7 +88,7 @@ router.post(
         amount: BOOKING_FEE,
       });
 
-      // Create payment record with real QPay data
+      // ── Save payment record ──
       const payment = await prisma.payment.create({
         data: {
           appointmentId,
@@ -98,10 +98,11 @@ router.post(
           method: 'QPAY',
           qrCode: qpayInvoice.qr_text,
           qrUrl: qpayInvoice.qPay_shortUrl,
-          invoiceId: qpayInvoice.invoice_id,
+          invoiceId: qpayInvoice.invoice_id, // QPay's own invoice_id
           expiresAt,
           metadata: {
             sender_invoice_no: senderInvoiceNo,
+            qr_image: qpayInvoice.qr_image,
             urls: qpayInvoice.urls as any,
           } as any,
         },
@@ -113,12 +114,12 @@ router.post(
         data: {
           paymentId: payment.id,
           amount: BOOKING_FEE,
-          qrCode: payment.qrCode,
-          qrImage: qpayInvoice.qr_image, // Base64 QR image
-          qrUrl: payment.qrUrl,
-          invoiceId: payment.invoiceId,
+          qrCode: payment.qrCode,           // qr_text
+          qrImage: qpayInvoice.qr_image,    // Base64 QR image
+          qrUrl: payment.qrUrl,             // qPay_shortUrl
+          invoiceId: payment.invoiceId,      // QPay invoice_id
           expiresAt: payment.expiresAt,
-          urls: qpayInvoice.urls, // Bank deep links
+          urls: qpayInvoice.urls,            // Bank deep links
         },
       });
     } catch (error) {
@@ -128,7 +129,7 @@ router.post(
 );
 
 // ==========================================
-// GET /api/payments/:paymentId/check - Check payment status
+// GET /api/payments/check/:paymentId - Frontend polling endpoint
 // ==========================================
 router.get('/check/:paymentId', async (req: Request, res: Response, next) => {
   try {
@@ -136,7 +137,7 @@ router.get('/check/:paymentId', async (req: Request, res: Response, next) => {
 
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
-      include: { 
+      include: {
         appointment: {
           include: { patient: true, doctor: true, service: true },
         },
@@ -147,7 +148,38 @@ router.get('/check/:paymentId', async (req: Request, res: Response, next) => {
       throw new AppError('Төлбөр олдсонгүй', 404);
     }
 
-    // Check if QR expired
+    // ── (a) Already EXPIRED in DB → return immediately ──
+    if (payment.status === 'EXPIRED') {
+      return res.json({
+        success: true,
+        data: {
+          paymentId: payment.id,
+          appointmentId: payment.appointmentId,
+          amount: payment.amount,
+          status: 'EXPIRED',
+          expiresAt: payment.expiresAt,
+          message: 'QR кодны хугацаа дууссан. Шинээр үүсгэнэ үү.',
+          appointment: payment.appointment,
+        },
+      });
+    }
+
+    // ── (b) Already COMPLETED → return immediately ──
+    if (payment.status === 'COMPLETED') {
+      return res.json({
+        success: true,
+        data: {
+          paymentId: payment.id,
+          appointmentId: payment.appointmentId,
+          amount: payment.amount,
+          status: 'COMPLETED',
+          paidAt: payment.paidAt,
+          appointment: payment.appointment,
+        },
+      });
+    }
+
+    // ── Check if QR time-expired → mark EXPIRED ──
     if (payment.status === 'PENDING' && payment.expiresAt && payment.expiresAt < new Date()) {
       await prisma.payment.update({
         where: { id: paymentId },
@@ -158,19 +190,23 @@ router.get('/check/:paymentId', async (req: Request, res: Response, next) => {
         success: true,
         data: {
           paymentId: payment.id,
+          appointmentId: payment.appointmentId,
+          amount: payment.amount,
           status: 'EXPIRED',
+          expiresAt: payment.expiresAt,
           message: 'QR кодны хугацаа дууссан. Шинээр үүсгэнэ үү.',
+          appointment: payment.appointment,
         },
       });
     }
 
-    // If payment is still PENDING, check QPay for real-time status
+    // ── (c) PENDING + invoiceId → check QPay for real-time status ──
     if (payment.status === 'PENDING' && payment.invoiceId && qpay.isConfigured()) {
       try {
         const qpayStatus = await qpay.checkPayment(payment.invoiceId);
 
+        // (d) QPay says PAID → update to COMPLETED + appointment PAID
         if (qpayStatus.count > 0 && qpayStatus.paid_amount >= payment.amount) {
-          // Payment confirmed by QPay! Update our records
           const paidRow = qpayStatus.rows[0];
 
           await prisma.$transaction([
@@ -205,12 +241,12 @@ router.get('/check/:paymentId', async (req: Request, res: Response, next) => {
           });
         }
       } catch (error) {
-        console.error('QPay check failed, returning DB status:', error);
-        // Fall through to return DB status
+        console.error('QPay check failed during polling, returning DB status:', error);
+        // Fall through to return current DB status
       }
     }
 
-    // Return current DB status
+    // ── (e) Return current DB status ──
     res.json({
       success: true,
       data: {
@@ -229,59 +265,81 @@ router.get('/check/:paymentId', async (req: Request, res: Response, next) => {
 
 // ==========================================
 // POST /api/payments/callback - QPay webhook callback
+//
+// FLOW:
+//  a) QPay calls: callback_url?invoice_id=<sender_invoice_no>
+//  b) Extract invoice_id from query or body
+//  c) Find payment in DB by metadata.sender_invoice_no or invoiceId
+//  d) Call qpay.checkPayment(payment.invoiceId) to VERIFY (security!)
+//  e) If paid_amount >= amount → COMPLETED + appointment PAID
+//  f) ALWAYS return 200 OK to QPay (prevent retries)
+//  g) On error, still return 200 + log internally
 // ==========================================
-router.post('/callback', async (req: Request, res: Response, next) => {
+router.post('/callback', async (req: Request, res: Response) => {
   try {
-    // QPay sends callback with query param ?invoice_id=...
-    // and body may contain payment info
+    // (a)(b) QPay sends callback with query param ?invoice_id=<sender_invoice_no>
     const invoiceIdFromQuery = req.query.invoice_id as string;
-    const { invoiceId: invoiceIdFromBody, transactionId, status, amount } = req.body;
-    
-    const lookupInvoiceId = invoiceIdFromQuery || invoiceIdFromBody;
+    const invoiceIdFromBody = req.body?.invoiceId || req.body?.invoice_id;
+    const transactionId = req.body?.transactionId;
 
-    if (!lookupInvoiceId) {
+    const lookupId = invoiceIdFromQuery || invoiceIdFromBody;
+
+    if (!lookupId) {
       console.warn('⚠️ QPay callback received without invoice_id:', req.body, req.query);
-      return res.json({ success: true });
+      return res.status(200).json({ success: true });
     }
 
-    console.log('📥 QPay callback received for invoice:', lookupInvoiceId);
+    console.log('📥 QPay callback received:', { lookupId, body: JSON.stringify(req.body) });
 
-    // Find payment by QPay invoice_id or by sender_invoice_no
-    let payment = await prisma.payment.findUnique({
-      where: { invoiceId: lookupInvoiceId },
-      include: { appointment: true },
-    });
+    // (c) Find payment in DB
+    let payment: any = null;
 
-    // If not found by invoiceId, search by sender_invoice_no in metadata
-    if (!payment) {
-      const payments = await prisma.payment.findMany({
-        where: {
-          status: 'PENDING',
-          metadata: {
-            path: ['sender_invoice_no'],
-            equals: lookupInvoiceId,
-          },
+    // 1. Search by sender_invoice_no in metadata (our callback URL uses this)
+    const paymentsByMeta = await prisma.payment.findMany({
+      where: {
+        status: 'PENDING',
+        metadata: {
+          path: ['sender_invoice_no'],
+          equals: lookupId,
         },
+      },
+      include: { appointment: true },
+      take: 1,
+    });
+    payment = paymentsByMeta[0] || null;
+
+    // 2. Try QPay invoice_id (direct match on invoiceId column)
+    if (!payment) {
+      payment = await prisma.payment.findUnique({
+        where: { invoiceId: lookupId },
         include: { appointment: true },
-        take: 1,
       });
-      payment = payments[0] || null;
+    }
+
+    // 3. Try body invoiceId if different
+    if (!payment && invoiceIdFromBody && invoiceIdFromBody !== lookupId) {
+      payment = await prisma.payment.findUnique({
+        where: { invoiceId: invoiceIdFromBody },
+        include: { appointment: true },
+      });
     }
 
     if (!payment) {
-      console.warn('⚠️ Payment not found for callback invoice:', lookupInvoiceId);
-      return res.json({ success: true });
+      console.warn('⚠️ Payment not found for callback:', lookupId);
+      return res.status(200).json({ success: true });
     }
 
     if (payment.status !== 'PENDING') {
-      return res.json({ success: true, message: 'Already processed' });
+      console.log('ℹ️ Payment already processed:', payment.id, payment.status);
+      return res.status(200).json({ success: true, message: 'Already processed' });
     }
 
-    // Verify payment with QPay API
+    // (d) VERIFY with QPay — MUST call checkPayment() after callback (security)
     if (payment.invoiceId && qpay.isConfigured()) {
       try {
         const qpayCheck = await qpay.checkPayment(payment.invoiceId);
 
+        // (e) paid_amount >= amount → COMPLETED
         if (qpayCheck.count > 0 && qpayCheck.paid_amount >= payment.amount) {
           const paidRow = qpayCheck.rows[0];
 
@@ -294,7 +352,7 @@ router.post('/callback', async (req: Request, res: Response, next) => {
                 paidAt: new Date(),
                 metadata: {
                   ...(payment.metadata as any || {}),
-                  callback: req.body,
+                  callback_body: req.body,
                   qpay_check: qpayCheck,
                 },
               },
@@ -306,42 +364,26 @@ router.post('/callback', async (req: Request, res: Response, next) => {
           ]);
 
           console.log('✅ Payment confirmed via callback:', payment.id);
-          return res.json({ success: true, message: 'Төлбөр амжилттай баталгаажлаа' });
+          return res.status(200).json({ success: true, message: 'Payment confirmed' });
+        } else {
+          console.log('ℹ️ QPay check returned insufficient payment:', {
+            count: qpayCheck.count,
+            paid_amount: qpayCheck.paid_amount,
+            required: payment.amount,
+          });
         }
       } catch (error) {
-        console.error('QPay check in callback failed:', error);
+        console.error('❌ QPay checkPayment in callback failed:', error);
+        // Still return 200 — don't let QPay retry
       }
     }
 
-    // Fallback: if QPay check fails but callback says success
-    if (status === 'SUCCESS' || status === 'COMPLETED') {
-      await prisma.$transaction([
-        prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: 'COMPLETED',
-            transactionId: transactionId || null,
-            paidAt: new Date(),
-            metadata: {
-              ...(payment.metadata as any || {}),
-              callback: req.body,
-            },
-          },
-        }),
-        prisma.appointment.update({
-          where: { id: payment.appointmentId },
-          data: { status: 'PAID' },
-        }),
-      ]);
-
-      console.log('✅ Payment confirmed via callback (fallback):', payment.id);
-    }
-
-    res.json({ success: true });
+    // (f) Always 200
+    return res.status(200).json({ success: true });
   } catch (error) {
+    // (g) Error → log internally, still return 200 to QPay
     console.error('❌ Callback error:', error);
-    // Always return 200 to QPay to prevent retries
-    res.json({ success: true });
+    return res.status(200).json({ success: true });
   }
 });
 
@@ -434,7 +476,6 @@ router.post(
         throw new AppError('Зөвхөн амжилттай төлбөрийг буцаан олгох боломжтой', 400);
       }
 
-      // In production: call payment provider refund API
       await prisma.payment.update({
         where: { id: payment.id },
         data: {
