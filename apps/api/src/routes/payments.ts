@@ -224,7 +224,7 @@ router.get('/check/:paymentId', async (req: Request, res: Response, next) => {
             }),
             prisma.appointment.update({
               where: { id: payment.appointmentId },
-              data: { status: 'PAID' },
+              data: { status: 'CONFIRMED' },
             }),
           ]);
 
@@ -359,7 +359,7 @@ router.post('/callback', async (req: Request, res: Response) => {
             }),
             prisma.appointment.update({
               where: { id: payment.appointmentId },
-              data: { status: 'PAID' },
+              data: { status: 'CONFIRMED' },
             }),
           ]);
 
@@ -599,7 +599,7 @@ if (process.env.NODE_ENV !== 'production') {
         }),
         prisma.appointment.update({
           where: { id: payment.appointmentId },
-          data: { status: 'PAID' },
+          data: { status: 'CONFIRMED' },
         }),
       ]);
 

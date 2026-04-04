@@ -140,8 +140,8 @@ model Schedule {
 // Appointment Status Enum
 enum AppointmentStatus {
   PENDING     // Захиалга үүссэн, төлбөр хүлээж байна
-  PAID        // Төлбөр орсон, баталгаажуулалт хүлээж байна
-  CONFIRMED   // Админ баталгаажуулсан
+  PAID        // (legacy) Хуучин статус, шинэ flow-д ашиглагдахгүй
+  CONFIRMED   // Төлбөр төлөгдсөн, захиалга баталгаажсан (автомат)
   COMPLETED   // Үйлчилгээ авсан
   NO_SHOW     // Ирээгүй, 25000₮ буцаахгүй
   CANCELLED   // Цуцлагдсан

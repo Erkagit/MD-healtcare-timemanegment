@@ -86,14 +86,14 @@ export default async function ConfirmationPage({
               <div className="absolute -top-1 -right-1 w-6 h-6 bg-blush-200 rounded-lg rotate-12 opacity-60" />
             </div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-blush-900 mb-2">
-              {appointment.status === 'PAID' || appointment.status === 'CONFIRMED'
+              {appointment.status === 'CONFIRMED'
                 ? 'Цаг амжилттай баталгаажлаа!'
                 : 'Цаг амжилттай захиалагдлаа!'}
             </h1>
             <p className="text-blush-600/60">
-              {appointment.status === 'PAID' || appointment.status === 'CONFIRMED'
+              {appointment.status === 'CONFIRMED'
                 ? 'Таны төлбөр амжилттай хүлээн авагдлаа. Цагтаа ирнэ үү.'
-                : 'Таны захиалга хүлээн авагдлаа. Эмнэлгээс удахгүй холбогдох болно.'}
+                : 'Таны захиалга хүлээн авагдлаа. Төлбөрөө төлнө үү.'}
             </p>
           </div>
 
@@ -142,10 +142,10 @@ export default async function ConfirmationPage({
               <div className="flex justify-between items-center">
                 <dt className="text-blush-600/60">Төлөв:</dt>
                 <dd>
-                  {appointment.status === 'PAID' || appointment.status === 'CONFIRMED' ? (
+                  {appointment.status === 'CONFIRMED' ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/50 rounded-xl text-sm font-medium">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      {appointment.status === 'PAID' ? 'Төлбөр төлөгдсөн' : 'Баталгаажсан'}
+                      Баталгаажсан
                     </span>
                   ) : appointment.status === 'COMPLETED' ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200/50 rounded-xl text-sm font-medium">

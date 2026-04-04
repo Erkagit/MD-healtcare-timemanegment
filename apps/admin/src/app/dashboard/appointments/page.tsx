@@ -19,8 +19,8 @@ const StatusBadge = ({ status }: { status: string }) => {
   };
 
   const labels: Record<string, string> = {
-    PENDING: 'Хүлээгдэж буй',
-    PAID: 'Төлбөр орсон',
+    PENDING: 'Төлбөр хүлээгдэж буй',
+    PAID: 'Баталгаажсан',
     CONFIRMED: 'Баталгаажсан',
     COMPLETED: 'Дууссан',
     NO_SHOW: 'Ирээгүй',
@@ -390,6 +390,16 @@ export default function AppointmentsCalendarPage() {
                           <td className="table-td text-right">
                             {['COMPLETED', 'NO_SHOW', 'CANCELLED'].includes(apt.status) ? (
                               <span className="text-xs text-slate-400">—</span>
+                            ) : apt.status === 'PENDING' ? (
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-amber-500">Төлбөр хүлээж буй</span>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleStatusChange(apt.id, 'CANCELLED'); }}
+                                  className="px-2 py-0.5 text-[10px] text-red-500 hover:bg-red-50 rounded border border-red-200"
+                                >
+                                  Цуцлах
+                                </button>
+                              </div>
                             ) : (
                               <select
                                 value={apt.status}
@@ -397,12 +407,7 @@ export default function AppointmentsCalendarPage() {
                                 onChange={(e) => handleStatusChange(apt.id, e.target.value)}
                                 className="px-2 py-1 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blush-500/10 focus:border-blush-300 bg-white"
                               >
-                                <option value={apt.status}>
-                                  {apt.status === 'PENDING' ? 'Хүлээгдэж буй' : apt.status === 'PAID' ? 'Төлбөр орсон' : 'Баталгаажсан'}
-                                </option>
-                                {apt.status === 'PENDING' && <option value="CANCELLED">Цуцлах</option>}
-                                {apt.status === 'PAID' && <option value="CONFIRMED">Баталгаажуулах</option>}
-                                {apt.status === 'PAID' && <option value="CANCELLED">Цуцлах</option>}
+                                <option value={apt.status}>Баталгаажсан</option>
                                 {apt.status === 'CONFIRMED' && <option value="COMPLETED">Дуусгах</option>}
                                 {apt.status === 'CONFIRMED' && <option value="NO_SHOW">Ирээгүй</option>}
                                 {apt.status === 'CONFIRMED' && <option value="CANCELLED">Цуцлах</option>}

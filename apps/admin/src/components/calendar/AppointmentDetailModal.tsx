@@ -10,21 +10,20 @@ interface AppointmentDetailModalProps {
 
 const ALL_STATUS_OPTIONS = [
   { value: 'PENDING', label: 'Хүлээгдэж буй', badge: 'badge badge-pending' },
-  { value: 'PAID', label: 'Төлбөр орсон', badge: 'badge badge-info' },
-  { value: 'CONFIRMED', label: 'Баталгаажуулах', badge: 'badge badge-confirmed' },
+  { value: 'CONFIRMED', label: 'Баталгаажсан', badge: 'badge badge-confirmed' },
   { value: 'COMPLETED', label: 'Дуусгах', badge: 'badge badge-completed' },
   { value: 'NO_SHOW', label: 'Ирээгүй', badge: 'badge badge-warning' },
   { value: 'CANCELLED', label: 'Цуцлах', badge: 'badge badge-cancelled' },
 ];
 
-// Valid state transitions - зөвхөн зөв шилжилт харуулна
+// Valid state transitions
+// CONFIRMED автоматаар төлбөр төлөгдөхөд болно — админ гараар хийхгүй
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  PENDING: ['CANCELLED'],                    // Төлөөгүй → зөвхөн цуцлах
-  PAID: ['CONFIRMED', 'CANCELLED'],          // Төлсөн → баталгаажуулах эсвэл цуцлах
+  PENDING: ['CANCELLED'],                           // Төлөөгүй → зөвхөн цуцлах
   CONFIRMED: ['COMPLETED', 'NO_SHOW', 'CANCELLED'], // Баталгаажсан → дуусгах, ирээгүй, цуцлах
-  COMPLETED: [],                              // Дууссан → өөрчлөх боломжгүй
-  NO_SHOW: [],                                // Ирээгүй → өөрчлөх боломжгүй
-  CANCELLED: [],                              // Цуцлагдсан → өөрчлөх боломжгүй
+  COMPLETED: [],                                     // Дууссан → өөрчлөх боломжгүй
+  NO_SHOW: [],                                       // Ирээгүй → өөрчлөх боломжгүй
+  CANCELLED: [],                                     // Цуцлагдсан → өөрчлөх боломжгүй
 };
 
 export default function AppointmentDetailModal({
@@ -161,12 +160,12 @@ export default function AppointmentDetailModal({
           {onStatusChange && availableOptions.length > 0 && (
             <div className="pt-3 border-t border-slate-100">
               <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-2">Төлөв өөрчлөх</p>
-              {appointment.status === 'PENDING' && !hasCompletedPayment && (
+              {appointment.status === 'PENDING' && (
                 <p className="text-xs text-amber-600 mb-2 flex items-center gap-1">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                   </svg>
-                  Төлбөр төлөгдөөгүй тул баталгаажуулах боломжгүй
+                  Төлбөр төлөгдөхөд захиалга автоматаар баталгаажна
                 </p>
               )}
               <div className="grid grid-cols-2 gap-1.5">

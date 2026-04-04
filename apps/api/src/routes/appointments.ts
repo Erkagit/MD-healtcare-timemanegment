@@ -84,7 +84,7 @@ router.post(
           doctorId,
           date: appointmentDate,
           time,
-          status: { in: ['PENDING', 'PAID', 'CONFIRMED'] },
+          status: { in: ['PENDING', 'CONFIRMED'] },
         },
       });
 
@@ -353,9 +353,9 @@ router.patch(
       }
 
       // ── Valid state transition enforcement ──
-      // CONFIRMED зөвхөн PAID статустай үед (төлбөр төлөгдсөн байх ёстой)
-      if (status === 'CONFIRMED' && current.status !== 'PAID') {
-        throw new AppError('Зөвхөн төлбөр төлөгдсөн захиалгыг баталгаажуулах боломжтой', 400);
+      // CONFIRMED автоматаар төлбөр төлөгдөхөд болно, админ гараар хийх боломжгүй
+      if (status === 'CONFIRMED') {
+        throw new AppError('Захиалга төлбөр төлөгдөхөд автоматаар баталгаажна. Гараар баталгаажуулах шаардлагагүй.', 400);
       }
 
       // COMPLETED зөвхөн CONFIRMED статусаас
@@ -413,8 +413,8 @@ router.delete('/:id', optionalAuth, async (req, res, next) => {
       throw new AppError('Хандах эрхгүй', 403);
     }
 
-    // Can only cancel PENDING, PAID or CONFIRMED appointments
-    if (!['PENDING', 'PAID', 'CONFIRMED'].includes(appointment.status)) {
+    // Can only cancel PENDING or CONFIRMED appointments
+    if (!['PENDING', 'CONFIRMED'].includes(appointment.status)) {
       throw new AppError('Энэ захиалгыг цуцлах боломжгүй', 400);
     }
 
