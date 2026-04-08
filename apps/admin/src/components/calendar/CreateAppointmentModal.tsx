@@ -53,7 +53,7 @@ export default function CreateAppointmentModal({
   const [patientEmail, setPatientEmail] = useState('');
   const [serviceId, setServiceId] = useState('');
   const [notes, setNotes] = useState('');
-  const [skipPayment, setSkipPayment] = useState(false);
+  const [requirePayment, setRequirePayment] = useState(false);
 
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
@@ -132,7 +132,7 @@ export default function CreateAppointmentModal({
       patientEmail: patientEmail.trim() || undefined,
       serviceId: serviceId || undefined,
       notes: notes.trim() || undefined,
-      skipPayment,
+      requirePayment,
     };
 
     try {
@@ -321,21 +321,33 @@ export default function CreateAppointmentModal({
               />
             </div>
 
-            {/* Skip payment toggle */}
+            {/* Payment status info */}
+            <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+              <div className="flex items-center gap-2 mb-1">
+                <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-xs font-medium text-emerald-700">
+                  {requirePayment ? 'Төлбөр хүлээгдэж буй' : 'Шууд баталгаажна'}
+                </span>
+              </div>
+              <p className="text-[10px] text-emerald-600 ml-6">
+                {requirePayment
+                  ? 'Захиалга PENDING статустай үүснэ — QPay төлбөр шаардана'
+                  : 'Админ захиалга → CONFIRMED статустай шууд үүснэ'}
+              </p>
+            </div>
+
+            {/* Require payment toggle (off by default = CONFIRMED) */}
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <div
-                onClick={() => setSkipPayment(!skipPayment)}
-                className={`relative w-9 h-5 rounded-full transition-colors ${skipPayment ? 'bg-blush-500' : 'bg-slate-200'}`}
+                onClick={() => setRequirePayment(!requirePayment)}
+                className={`relative w-9 h-5 rounded-full transition-colors ${requirePayment ? 'bg-amber-500' : 'bg-slate-200'}`}
               >
-                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${skipPayment ? 'translate-x-4' : 'translate-x-0'}`} />
+                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${requirePayment ? 'translate-x-4' : 'translate-x-0'}`} />
               </div>
-              <span className="text-xs text-slate-700">Төлбөр алгасаж шууд баталгаажуулах</span>
+              <span className="text-xs text-slate-700">QPay төлбөр шаардах</span>
             </label>
-            {skipPayment && (
-              <p className="text-[10px] text-amber-600 -mt-2 ml-11">
-                Захиалга CONFIRMED статустай үүснэ (утсаар бүртгүүлсэн өвчтөн гэх мэт)
-              </p>
-            )}
           </div>
 
           {/* Footer */}

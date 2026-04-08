@@ -219,7 +219,7 @@ export const appointmentsAPI = {
   },
 
   create: (data: CreateAppointmentInput) =>
-    fetchAPI<{ success: boolean; data: AppointmentWithDetails; message: string }>('/appointments', {
+    fetchAPI<{ success: boolean; data: AppointmentWithDetails; message: string }>('/admin/appointments', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -464,7 +464,8 @@ export interface CreateAppointmentInput {
   patientPhone: string;
   patientEmail?: string;
   notes?: string;
-  skipPayment?: boolean;
+  /** If true, creates as PENDING (requires QPay payment). Default: false (CONFIRMED) */
+  requirePayment?: boolean;
 }
 
 // Service Types
