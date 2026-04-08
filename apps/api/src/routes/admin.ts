@@ -171,6 +171,12 @@ router.get('/stats', async (req, res, next) => {
       totalPatients,
       todayAppointments,
       pendingAppointments,
+      confirmedAppointments,
+      completedAppointments,
+      cancelledAppointments,
+      totalRevenue,
+      todayRevenue,
+      pendingPayments,
       recentAppointments,
     ] = await Promise.all([
       prisma.doctor.count(),
@@ -182,10 +188,25 @@ router.get('/stats', async (req, res, next) => {
         },
       }),
       prisma.appointment.count({ where: { status: 'PENDING' } }),
+      prisma.appointment.count({ where: { status: 'CONFIRMED' } }),
+      prisma.appointment.count({ where: { status: 'COMPLETED' } }),
+      prisma.appointment.count({ where: { status: 'CANCELLED' } }),
+      prisma.payment.aggregate({
+        where: { status: 'COMPLETED' },
+        _sum: { amount: true },
+      }),
+      prisma.payment.aggregate({
+        where: {
+          status: 'COMPLETED',
+          paidAt: { gte: today, lt: tomorrow },
+        },
+        _sum: { amount: true },
+      }),
+      prisma.payment.count({ where: { status: 'PENDING' } }),
       prisma.appointment.findMany({
         take: 10,
         orderBy: { createdAt: 'desc' },
-        include: { patient: true, doctor: true },
+        include: { patient: true, doctor: true, payments: { orderBy: { createdAt: 'desc' }, take: 1 } },
       }),
     ]);
 
@@ -197,6 +218,12 @@ router.get('/stats', async (req, res, next) => {
         totalPatients,
         todayAppointments,
         pendingAppointments,
+        confirmedAppointments,
+        completedAppointments,
+        cancelledAppointments,
+        totalRevenue: totalRevenue._sum.amount || 0,
+        todayRevenue: todayRevenue._sum.amount || 0,
+        pendingPayments,
         recentAppointments,
       },
     });

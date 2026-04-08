@@ -39,6 +39,11 @@ export default function AppointmentDetailModal({
 
   const currentStatus = ALL_STATUS_OPTIONS.find((o) => o.value === appointment.status);
 
+  // Check payment status (must be before validNextStatuses)
+  const hasCompletedPayment = appointment.payments?.some((p) => p.status === 'COMPLETED');
+  const hasPendingPayment = appointment.payments?.some((p) => p.status === 'PENDING');
+  const latestPayment = appointment.payments?.[0];
+
   // Get valid next statuses based on current status + payment state
   const validNextStatuses = (() => {
     const transitions = VALID_TRANSITIONS[appointment.status] || [];
@@ -52,11 +57,6 @@ export default function AppointmentDetailModal({
     return transitions;
   })();
   const availableOptions = ALL_STATUS_OPTIONS.filter((o) => validNextStatuses.includes(o.value));
-
-  // Check payment status
-  const hasCompletedPayment = appointment.payments?.some((p) => p.status === 'COMPLETED');
-  const hasPendingPayment = appointment.payments?.some((p) => p.status === 'PENDING');
-  const latestPayment = appointment.payments?.[0];
 
   const formattedDate = new Date(appointment.date).toLocaleDateString('mn-MN', {
     weekday: 'long',

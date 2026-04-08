@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { adminAPI, type DashboardStats, type AppointmentWithDetails } from '@/lib/api';
+import { adminAPI, paymentsAPI, type DashboardStats, type AppointmentWithDetails } from '@/lib/api';
 
 // ==========================================
 // MD HEALTH CARE — ADMIN DASHBOARD
-// Clean KPI overview + recent activity
+// Enhanced KPI overview + payment stats + sync
 // ==========================================
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -35,6 +35,32 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
+const PaymentBadge = ({ payment }: { payment?: { status: string } }) => {
+  if (!payment) return <span className="text-[10px] text-slate-300">—</span>;
+
+  const styles: Record<string, string> = {
+    PENDING: 'text-amber-600 bg-amber-50',
+    COMPLETED: 'text-green-600 bg-green-50',
+    EXPIRED: 'text-slate-400 bg-slate-50',
+    FAILED: 'text-red-600 bg-red-50',
+    REFUNDED: 'text-purple-600 bg-purple-50',
+  };
+
+  const labels: Record<string, string> = {
+    PENDING: 'Хүлээж буй',
+    COMPLETED: 'Төлсөн',
+    EXPIRED: 'Хугацаа дууссан',
+    FAILED: 'Амжилтгүй',
+    REFUNDED: 'Буцаалт',
+  };
+
+  return (
+    <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold ${styles[payment.status] || 'text-slate-400 bg-slate-50'}`}>
+      {labels[payment.status] || payment.status}
+    </span>
+  );
+};
+
 const StatCardSkeleton = () => (
   <div className="kpi-card">
     <div className="flex items-center justify-between mb-4">
@@ -46,27 +72,50 @@ const StatCardSkeleton = () => (
   </div>
 );
 
+const formatMoney = (amount: number) => {
+  return new Intl.NumberFormat('mn-MN').format(amount) + '₮';
+};
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState('');
+
+  const loadStats = async () => {
+    try {
+      const response = await adminAPI.getStats();
+      setStats(response.data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Мэдээлэл ачаалахад алдаа гарлаа';
+      setError(message);
+      console.error('[Dashboard] Load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const response = await adminAPI.getStats();
-        setStats(response.data);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Мэдээлэл ачаалахад алдаа гарлаа';
-        setError(message);
-        console.error('[Dashboard] Load error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadStats();
   }, []);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncResult('');
+    try {
+      const res = await paymentsAPI.syncPending();
+      setSyncResult(res.message);
+      // Reload stats after sync
+      await loadStats();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Синк хийхэд алдаа гарлаа';
+      setSyncResult(`❌ ${msg}`);
+    } finally {
+      setSyncing(false);
+      setTimeout(() => setSyncResult(''), 5000);
+    }
+  };
 
   const statCards = [
     {
@@ -105,6 +154,7 @@ export default function DashboardPage() {
     {
       label: 'Хүлээгдэж буй',
       value: stats?.pendingAppointments || 0,
+      sub: stats?.pendingPayments ? `${stats.pendingPayments} төлбөр хүлээж буй` : undefined,
       icon: (
         <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -134,15 +184,39 @@ export default function DashboardPage() {
           <h1 className="text-lg font-bold text-slate-900">Хянах самбар</h1>
           <p className="text-sm text-slate-500 mt-0.5">Өнөөдрийн тойм мэдээлэл</p>
         </div>
-        <span className="text-xs text-slate-400 font-medium">
-          {new Date().toLocaleDateString('mn-MN', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all disabled:opacity-50 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+          >
+            <svg className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+            </svg>
+            {syncing ? 'Шалгаж байна...' : 'Төлбөр шалгах'}
+          </button>
+          <span className="text-xs text-slate-400 font-medium">
+            {new Date().toLocaleDateString('mn-MN', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </span>
+        </div>
       </div>
+
+      {/* Sync Result */}
+      {syncResult && (
+        <div className={`px-4 py-2.5 rounded-lg text-xs font-medium flex items-center gap-2 animate-fade-in ${
+          syncResult.startsWith('❌') ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+        }`}>
+          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {syncResult}
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
@@ -170,6 +244,73 @@ export default function DashboardPage() {
               );
             })}
       </div>
+
+      {/* Revenue + Appointment Summary Row */}
+      {!loading && stats && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+          {/* Revenue Card */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Орлого</h3>
+                <p className="text-[10px] text-slate-400">QPay төлбөрийн мэдээлэл</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Нийт орлого</p>
+                <p className="text-xl font-bold text-slate-900">{formatMoney(stats.totalRevenue)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Өнөөдрийн орлого</p>
+                <p className="text-xl font-bold text-emerald-600">{formatMoney(stats.todayRevenue)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Appointment Status Summary */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Захиалгын тойм</h3>
+                <p className="text-[10px] text-slate-400">Статусаар ангилсан</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+                <span className="text-xs text-slate-500">Хүлээгдэж буй</span>
+                <span className="text-xs font-bold text-slate-900 ml-auto">{stats.pendingAppointments}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                <span className="text-xs text-slate-500">Баталгаажсан</span>
+                <span className="text-xs font-bold text-slate-900 ml-auto">{stats.confirmedAppointments}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                <span className="text-xs text-slate-500">Дууссан</span>
+                <span className="text-xs font-bold text-slate-900 ml-auto">{stats.completedAppointments}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                <span className="text-xs text-slate-500">Цуцлагдсан</span>
+                <span className="text-xs font-bold text-slate-900 ml-auto">{stats.cancelledAppointments}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recent Appointments Table */}
       <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
@@ -203,8 +344,8 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : stats?.recentAppointments && stats.recentAppointments.length > 0 ? (
-          /* Desktop table */
           <>
+            {/* Desktop table */}
             <div className="hidden md:block">
               <table className="w-full">
                 <thead>
@@ -213,6 +354,7 @@ export default function DashboardPage() {
                     <th className="table-th">Эмч</th>
                     <th className="table-th">Огноо</th>
                     <th className="table-th">Цаг</th>
+                    <th className="table-th">Төлбөр</th>
                     <th className="table-th text-right">Төлөв</th>
                   </tr>
                 </thead>
@@ -224,7 +366,10 @@ export default function DashboardPage() {
                           <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-600 flex-shrink-0">
                             {apt.patient.name.charAt(0).toUpperCase()}
                           </div>
-                          <span className="font-medium text-slate-900 text-sm">{apt.patient.name}</span>
+                          <div>
+                            <span className="font-medium text-slate-900 text-sm">{apt.patient.name}</span>
+                            <p className="text-[10px] text-slate-400">{apt.patient.phone}</p>
+                          </div>
                         </div>
                       </td>
                       <td className="table-td text-slate-500 text-sm">
@@ -235,6 +380,9 @@ export default function DashboardPage() {
                       </td>
                       <td className="table-td text-slate-500 text-sm font-mono">
                         {apt.time}
+                      </td>
+                      <td className="table-td">
+                        <PaymentBadge payment={apt.payments?.[0]} />
                       </td>
                       <td className="table-td text-right">
                         <StatusBadge status={apt.status} />
@@ -258,7 +406,10 @@ export default function DashboardPage() {
                       {apt.doctor.name} · {new Date(apt.date).toLocaleDateString('mn-MN', { month: 'short', day: 'numeric' })} · {apt.time}
                     </p>
                   </div>
-                  <StatusBadge status={apt.status} />
+                  <div className="flex flex-col items-end gap-1">
+                    <StatusBadge status={apt.status} />
+                    <PaymentBadge payment={apt.payments?.[0]} />
+                  </div>
                 </div>
               ))}
             </div>

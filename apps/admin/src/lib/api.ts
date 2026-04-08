@@ -269,6 +269,11 @@ export const paymentsAPI = {
     fetchAPI<{ success: boolean; data: AppointmentWithDetails }>(`/payments/simulate-payment/${paymentId}`, {
       method: 'POST',
     }),
+
+  syncPending: () =>
+    fetchAPI<{ success: boolean; message: string; data: { total: number; confirmed: number; expired: number; stillPending: number } }>('/payments/sync-pending', {
+      method: 'POST',
+    }),
 };
 
 // Services APIs (Admin - includes prices)
@@ -400,6 +405,12 @@ export interface DashboardStats {
   totalPatients: number;
   todayAppointments: number;
   pendingAppointments: number;
+  confirmedAppointments: number;
+  completedAppointments: number;
+  cancelledAppointments: number;
+  totalRevenue: number;
+  todayRevenue: number;
+  pendingPayments: number;
   recentAppointments: AppointmentWithDetails[];
 }
 
