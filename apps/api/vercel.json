@@ -33,7 +33,7 @@
   "crons": [
     {
       "path": "/api/payments/cron-sync?cronKey=mdhealthcare-sync-2026",
-      "schedule": "0 */2 * * *"
+      "schedule": "0 8 * * *"
     }
   ]
 }
