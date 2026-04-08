@@ -78,6 +78,20 @@ router.post(
         throw new AppError('Буруу цагийн интервал', 400);
       }
 
+      // ── Per-phone daily booking limit (max 3 per day) ──
+      const MAX_BOOKINGS_PER_DAY = 3;
+      const existingBookingsToday = await prisma.appointment.count({
+        where: {
+          date: appointmentDate,
+          status: { in: ['PENDING', 'CONFIRMED'] },
+          patient: { phone: patientPhone },
+        },
+      });
+
+      if (existingBookingsToday >= MAX_BOOKINGS_PER_DAY) {
+        throw new AppError(`Нэг өдөрт хамгийн ихдээ ${MAX_BOOKINGS_PER_DAY} цаг захиалах боломжтой`, 400);
+      }
+
       // Check for double booking (using unique constraint)
       const existingAppointment = await prisma.appointment.findFirst({
         where: {

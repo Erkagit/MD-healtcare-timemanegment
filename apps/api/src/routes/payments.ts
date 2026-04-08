@@ -567,6 +567,173 @@ router.get('/stats', authenticateAdmin, async (req: Request, res: Response, next
 });
 
 // ==========================================
+// POST /api/payments/sync-pending - Safety net: batch-check all PENDING payments
+// Can be called by admin or by Vercel cron
+// ==========================================
+router.post('/sync-pending', async (req: Request, res: Response, next) => {
+  try {
+    // Allow admin auth OR a secret cron key
+    const cronKey = req.headers['x-cron-key'] || req.query.cronKey;
+    const authHeader = req.headers.authorization;
+    const isAdmin = !!authHeader; // will be validated by route if needed
+    const isValidCron = cronKey === (process.env.CRON_SECRET || 'mdhealthcare-sync-2026');
+
+    if (!isAdmin && !isValidCron) {
+      throw new AppError('Хандах эрхгүй', 401);
+    }
+
+    if (!qpay.isConfigured()) {
+      throw new AppError('QPay тохиргоо дутуу', 500);
+    }
+
+    // Find all PENDING payments that have an invoiceId and haven't expired
+    const pendingPayments = await prisma.payment.findMany({
+      where: {
+        status: 'PENDING',
+        invoiceId: { not: null },
+      },
+      include: { appointment: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50, // limit batch size
+    });
+
+    console.log(`🔄 Sync-pending: checking ${pendingPayments.length} payments...`);
+
+    let confirmed = 0;
+    let expired = 0;
+    let stillPending = 0;
+    const results: string[] = [];
+
+    for (const payment of pendingPayments) {
+      try {
+        // Check if expired first
+        if (payment.expiresAt && payment.expiresAt < new Date()) {
+          await prisma.payment.update({
+            where: { id: payment.id },
+            data: { status: 'EXPIRED' },
+          });
+          expired++;
+          results.push(`${payment.id}: EXPIRED`);
+          continue;
+        }
+
+        // Check QPay
+        const qpayStatus = await qpay.checkPayment(payment.invoiceId!);
+
+        if (qpayStatus.count > 0 && qpayStatus.paid_amount >= payment.amount) {
+          const paidRow = qpayStatus.rows[0];
+          await prisma.$transaction([
+            prisma.payment.update({
+              where: { id: payment.id },
+              data: {
+                status: 'COMPLETED',
+                transactionId: paidRow?.payment_id || null,
+                paidAt: new Date(),
+                metadata: {
+                  ...(payment.metadata as any || {}),
+                  sync_check: qpayStatus,
+                  synced_at: new Date().toISOString(),
+                },
+              },
+            }),
+            prisma.appointment.update({
+              where: { id: payment.appointmentId },
+              data: { status: 'CONFIRMED' },
+            }),
+          ]);
+          confirmed++;
+          results.push(`${payment.id}: CONFIRMED ✅`);
+          console.log(`✅ Sync confirmed payment ${payment.id}`);
+        } else {
+          stillPending++;
+          results.push(`${payment.id}: still PENDING`);
+        }
+      } catch (err: any) {
+        results.push(`${payment.id}: ERROR - ${err.message}`);
+        console.error(`❌ Sync check failed for ${payment.id}:`, err.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Checked ${pendingPayments.length} payments: ${confirmed} confirmed, ${expired} expired, ${stillPending} pending`,
+      data: { total: pendingPayments.length, confirmed, expired, stillPending, results },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==========================================
+// GET /api/payments/cron-sync - Vercel Cron trigger (GET for cron compatibility)
+// ==========================================
+router.get('/cron-sync', async (req: Request, res: Response, next) => {
+  try {
+    const cronKey = req.headers['x-cron-key'] || req.query.cronKey;
+    if (cronKey !== (process.env.CRON_SECRET || 'mdhealthcare-sync-2026')) {
+      throw new AppError('Хандах эрхгүй', 401);
+    }
+
+    if (!qpay.isConfigured()) {
+      return res.json({ success: true, message: 'QPay not configured, skipping' });
+    }
+
+    const pendingPayments = await prisma.payment.findMany({
+      where: {
+        status: 'PENDING',
+        invoiceId: { not: null },
+      },
+      include: { appointment: true },
+      take: 20,
+    });
+
+    let confirmed = 0;
+    let expired = 0;
+
+    for (const payment of pendingPayments) {
+      try {
+        if (payment.expiresAt && payment.expiresAt < new Date()) {
+          await prisma.payment.update({ where: { id: payment.id }, data: { status: 'EXPIRED' } });
+          expired++;
+          continue;
+        }
+
+        const qpayStatus = await qpay.checkPayment(payment.invoiceId!);
+        if (qpayStatus.count > 0 && qpayStatus.paid_amount >= payment.amount) {
+          const paidRow = qpayStatus.rows[0];
+          await prisma.$transaction([
+            prisma.payment.update({
+              where: { id: payment.id },
+              data: {
+                status: 'COMPLETED',
+                transactionId: paidRow?.payment_id || null,
+                paidAt: new Date(),
+                metadata: { ...(payment.metadata as any || {}), cron_synced: true },
+              },
+            }),
+            prisma.appointment.update({
+              where: { id: payment.appointmentId },
+              data: { status: 'CONFIRMED' },
+            }),
+          ]);
+          confirmed++;
+          console.log(`✅ Cron confirmed payment ${payment.id}`);
+        }
+      } catch (err: any) {
+        console.error(`❌ Cron check failed for ${payment.id}:`, err.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Cron: ${pendingPayments.length} checked, ${confirmed} confirmed, ${expired} expired`,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==========================================
 // POST /api/payments/simulate-payment - DEV ONLY: Simulate payment completion
 // ==========================================
 if (process.env.NODE_ENV !== 'production') {
