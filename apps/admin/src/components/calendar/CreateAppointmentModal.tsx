@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   appointmentsAPI,
   servicesAPI,
@@ -72,14 +72,14 @@ export default function CreateAppointmentModal({
     load();
   }, []);
 
-  // ── Time slots for selected doctor + date ──
-  const availableTimeSlots = (() => {
-    if (!doctorId || !date) return [];
-    const selectedDate = new Date(date);
+  // ── Helper: compute time slots for a doctor+date pair ──
+  const computeSlots = useCallback((forDoctorId: string, forDate: string): string[] => {
+    if (!forDoctorId || !forDate) return [];
+    const selectedDate = new Date(forDate);
     const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
     const dayOfWeek = days[selectedDate.getDay()];
 
-    const doctor = doctors.find((d) => d.id === doctorId);
+    const doctor = doctors.find((d) => d.id === forDoctorId);
     const schedule = doctor?.schedules?.find((s) => s.dayOfWeek === dayOfWeek && s.isActive);
     if (!schedule) return [];
 
@@ -96,7 +96,13 @@ export default function CreateAppointmentModal({
       slots.push(`${h}:${min}`);
     }
     return slots;
-  })();
+  }, [doctors]);
+
+  // ── Time slots for selected doctor + date ──
+  const availableTimeSlots = useMemo(
+    () => computeSlots(doctorId, date),
+    [doctorId, date, computeSlots]
+  );
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -229,7 +235,34 @@ export default function CreateAppointmentModal({
               </label>
               <select
                 value={doctorId}
-                onChange={(e) => { setDoctorId(e.target.value); setTime(''); }}
+                onChange={(e) => {
+                  const newDoctorId = e.target.value;
+                  setDoctorId(newDoctorId);
+                  // When switching doctor, try to keep current time if it's a valid slot.
+                  // If not, pick the nearest available slot instead of blanking it.
+                  if (time && newDoctorId && date) {
+                    const newSlots = computeSlots(newDoctorId, date);
+                    if (newSlots.length > 0 && !newSlots.includes(time)) {
+                      // Find nearest slot
+                      const timeToMin = (t: string) => {
+                        const [h, m] = t.split(':').map(Number);
+                        return h * 60 + m;
+                      };
+                      const currentMin = timeToMin(time);
+                      let nearest = newSlots[0];
+                      let minDiff = Math.abs(timeToMin(nearest) - currentMin);
+                      for (const s of newSlots) {
+                        const diff = Math.abs(timeToMin(s) - currentMin);
+                        if (diff < minDiff) {
+                          minDiff = diff;
+                          nearest = s;
+                        }
+                      }
+                      setTime(nearest);
+                    }
+                    // If newSlots includes current time or newSlots is empty — keep time as-is
+                  }
+                }}
                 className={inputCls('doctorId')}
               >
                 <option value="">Эмч сонгох</option>
