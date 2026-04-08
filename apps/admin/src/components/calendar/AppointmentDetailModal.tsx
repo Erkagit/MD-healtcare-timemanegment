@@ -17,13 +17,13 @@ const ALL_STATUS_OPTIONS = [
 ];
 
 // Valid state transitions
-// CONFIRMED автоматаар төлбөр төлөгдөхөд болно — админ гараар хийхгүй
+// CONFIRMED: Allowed if payment is complete or no payment exists
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  PENDING: ['CANCELLED'],                           // Төлөөгүй → зөвхөн цуцлах
-  CONFIRMED: ['COMPLETED', 'NO_SHOW', 'CANCELLED'], // Баталгаажсан → дуусгах, ирээгүй, цуцлах
-  COMPLETED: [],                                     // Дууссан → өөрчлөх боломжгүй
-  NO_SHOW: [],                                       // Ирээгүй → өөрчлөх боломжгүй
-  CANCELLED: [],                                     // Цуцлагдсан → өөрчлөх боломжгүй
+  PENDING: ['CONFIRMED', 'CANCELLED'],               // Хүлээгдэж буй → баталгаажуулах (төлбөртэй) эсвэл цуцлах
+  CONFIRMED: ['COMPLETED', 'NO_SHOW', 'CANCELLED'],  // Баталгаажсан → дуусгах, ирээгүй, цуцлах
+  COMPLETED: [],                                      // Дууссан → өөрчлөх боломжгүй
+  NO_SHOW: [],                                        // Ирээгүй → өөрчлөх боломжгүй
+  CANCELLED: [],                                      // Цуцлагдсан → өөрчлөх боломжгүй
 };
 
 export default function AppointmentDetailModal({
@@ -39,8 +39,18 @@ export default function AppointmentDetailModal({
 
   const currentStatus = ALL_STATUS_OPTIONS.find((o) => o.value === appointment.status);
 
-  // Get valid next statuses based on current status
-  const validNextStatuses = VALID_TRANSITIONS[appointment.status] || [];
+  // Get valid next statuses based on current status + payment state
+  const validNextStatuses = (() => {
+    const transitions = VALID_TRANSITIONS[appointment.status] || [];
+    if (appointment.status === 'PENDING') {
+      // Allow CONFIRMED only if there's a completed payment or no payment at all
+      const hasNoPayment = !appointment.payments || appointment.payments.length === 0;
+      if (!hasCompletedPayment && !hasNoPayment) {
+        return transitions.filter((s) => s !== 'CONFIRMED');
+      }
+    }
+    return transitions;
+  })();
   const availableOptions = ALL_STATUS_OPTIONS.filter((o) => validNextStatuses.includes(o.value));
 
   // Check payment status
@@ -160,12 +170,12 @@ export default function AppointmentDetailModal({
           {onStatusChange && availableOptions.length > 0 && (
             <div className="pt-3 border-t border-slate-100">
               <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-2">Төлөв өөрчлөх</p>
-              {appointment.status === 'PENDING' && (
+              {appointment.status === 'PENDING' && !hasCompletedPayment && (
                 <p className="text-xs text-amber-600 mb-2 flex items-center gap-1">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                   </svg>
-                  Төлбөр төлөгдөхөд захиалга автоматаар баталгаажна
+                  QPay төлбөр төлөгдөхөд захиалга автоматаар баталгаажна
                 </p>
               )}
               <div className="grid grid-cols-2 gap-1.5">

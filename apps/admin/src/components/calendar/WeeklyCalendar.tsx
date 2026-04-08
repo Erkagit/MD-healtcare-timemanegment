@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { AppointmentWithDetails } from '@/lib/api';
+import { AppointmentWithDetails, DoctorWithStats } from '@/lib/api';
 
 // ==========================================
 // TYPES & CONSTANTS
@@ -11,6 +11,12 @@ export interface WeeklyCalendarProps {
   appointments: AppointmentWithDetails[];
   onAppointmentClick?: (appointment: AppointmentWithDetails) => void;
   onStatusChange?: (id: string, status: string) => void;
+  /** All doctors (with schedules) for available-slot visualization */
+  doctors?: DoctorWithStats[];
+  /** Currently filtered doctor id — limits slot visualization */
+  selectedDoctor?: string;
+  /** Called when an empty slot is clicked */
+  onSlotClick?: (date: string, time: string, doctorId?: string) => void;
   startHour?: number;
   endHour?: number;
   slotDuration?: number;
@@ -336,6 +342,9 @@ interface DayColumnProps {
   slotDuration: number;
   isToday: boolean;
   onAppointmentClick: (appointment: AppointmentWithDetails) => void;
+  /** Available time slots for this day (from doctor schedules) */
+  availableSlots?: string[];
+  onSlotClick?: (time: string) => void;
 }
 
 const DayColumn = ({
@@ -346,7 +355,11 @@ const DayColumn = ({
   slotDuration,
   isToday,
   onAppointmentClick,
+  availableSlots,
+  onSlotClick,
 }: DayColumnProps) => {
+  const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
+
   const positioned = useMemo(
     () => groupOverlappingAppointments(appointments, startHour, slotDuration),
     [appointments, startHour, slotDuration]
@@ -355,6 +368,7 @@ const DayColumn = ({
   const totalHours = endHour - startHour;
   const pixelsPerHour = 60 * (60 / slotDuration);
   const gridHeight = totalHours * pixelsPerHour;
+  const pixelsPerSlot = pixelsPerHour * (slotDuration / 60);
 
   // Current time indicator
   const now = new Date();
@@ -364,6 +378,12 @@ const DayColumn = ({
   const showCurrentTime = isCurrentDay && 
     currentMinutes >= startHour * 60 && 
     currentMinutes <= endHour * 60;
+
+  // Booked slots (PENDING or CONFIRMED)
+  const bookedTimes = useMemo(
+    () => new Set(appointments.filter((a) => ['PENDING', 'CONFIRMED'].includes(a.status)).map((a) => a.time)),
+    [appointments]
+  );
 
   return (
     <div className={`relative border-r border-slate-100 ${isToday ? 'bg-blue-50/20' : ''}`}>
@@ -384,6 +404,42 @@ const DayColumn = ({
             style={{ top: `${i * pixelsPerHour + pixelsPerHour / 2}px` }}
           />
         ))}
+
+        {/* Available (empty) slots */}
+        {availableSlots && onSlotClick && availableSlots.map((slotTime) => {
+          if (bookedTimes.has(slotTime)) return null;
+          const slotMin = timeToMinutes(slotTime);
+          if (slotMin < startHour * 60 || slotMin >= endHour * 60) return null;
+          const top = (slotMin - startHour * 60) * (60 / slotDuration);
+          const isHovered = hoveredSlot === slotTime;
+
+          return (
+            <div
+              key={slotTime}
+              className={`absolute left-0.5 right-0.5 rounded transition-all cursor-pointer group z-10
+                ${isHovered
+                  ? 'bg-emerald-100 border border-emerald-300'
+                  : 'bg-emerald-50/60 border border-dashed border-emerald-200/70'
+                }`}
+              style={{ top: `${top + 1}px`, height: `${pixelsPerSlot - 2}px` }}
+              onClick={() => onSlotClick(slotTime)}
+              onMouseEnter={() => setHoveredSlot(slotTime)}
+              onMouseLeave={() => setHoveredSlot(null)}
+              title={`${slotTime} — Захиалга нэмэх`}
+            >
+              {isHovered && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-0.5">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Захиалга нэмэх
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {/* Appointments */}
         <div className="absolute inset-0">
@@ -421,6 +477,9 @@ export default function WeeklyCalendar({
   appointments,
   onAppointmentClick,
   onStatusChange,
+  doctors,
+  selectedDoctor,
+  onSlotClick,
   startHour = 8,
   endHour = 20,
   slotDuration = 30,
@@ -445,6 +504,49 @@ export default function WeeklyCalendar({
     }
     return map;
   }, [appointments]);
+
+  // Compute available slots per date based on doctor schedules
+  const availableSlotsByDate = useMemo(() => {
+    if (!doctors || !onSlotClick) return new Map<string, string[]>();
+
+    const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    const result = new Map<string, string[]>();
+
+    for (const date of weekDates) {
+      const dateStr = formatDate(date);
+      const dayOfWeek = dayNames[date.getDay()];
+
+      // Determine which doctors to consider
+      const relevantDoctors = selectedDoctor
+        ? doctors.filter((d) => d.id === selectedDoctor && d.isActive)
+        : doctors.filter((d) => d.isActive);
+
+      const slots = new Set<string>();
+
+      for (const doctor of relevantDoctors) {
+        const schedule = doctor.schedules?.find(
+          (s) => s.dayOfWeek === dayOfWeek && s.isActive
+        );
+        if (!schedule) continue;
+
+        const [startH, startM] = schedule.startTime.split(':').map(Number);
+        const [endH, endM] = schedule.endTime.split(':').map(Number);
+        const startMin = startH * 60 + startM;
+        const endMin = endH * 60 + endM;
+        const dur = schedule.slotDuration || slotDuration;
+
+        for (let m = startMin; m < endMin; m += dur) {
+          const h = Math.floor(m / 60).toString().padStart(2, '0');
+          const min = (m % 60).toString().padStart(2, '0');
+          slots.add(`${h}:${min}`);
+        }
+      }
+
+      result.set(dateStr, Array.from(slots).sort());
+    }
+
+    return result;
+  }, [doctors, selectedDoctor, weekDates, slotDuration, onSlotClick]);
 
   // Navigation handlers
   const navigateWeek = useCallback((direction: number) => {
@@ -616,6 +718,7 @@ export default function WeeklyCalendar({
               {weekDates.map((date, i) => {
                 const dateStr = formatDate(date);
                 const dayAppointments = appointmentsByDate.get(dateStr) || [];
+                const dayAvailableSlots = availableSlotsByDate.get(dateStr);
 
                 return (
                   <DayColumn
@@ -627,6 +730,8 @@ export default function WeeklyCalendar({
                     slotDuration={slotDuration}
                     isToday={dateStr === today}
                     onAppointmentClick={handleAppointmentClick}
+                    availableSlots={dayAvailableSlots}
+                    onSlotClick={onSlotClick ? (time) => onSlotClick(dateStr, time, selectedDoctor) : undefined}
                   />
                 );
               })}

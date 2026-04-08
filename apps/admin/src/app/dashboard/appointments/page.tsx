@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { appointmentsAPI, adminAPI, type AppointmentWithDetails, type DoctorWithStats } from '@/lib/api';
-import { WeeklyCalendar, AppointmentDetailModal } from '@/components/calendar';
+import { WeeklyCalendar, AppointmentDetailModal, CreateAppointmentModal } from '@/components/calendar';
 
 // ==========================================
 // STATUS BADGE
@@ -71,6 +71,11 @@ export default function AppointmentsCalendarPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithDetails | null>(null);
+  const [createModal, setCreateModal] = useState<{
+    date?: string;
+    time?: string;
+    doctorId?: string;
+  } | null>(null);
 
   useEffect(() => { loadDoctors(); }, []);
   useEffect(() => { loadAppointments(); }, [currentDate, doctorFilter, statusFilter, viewMode]);
@@ -155,6 +160,10 @@ export default function AppointmentsCalendarPage() {
   const handleAppointmentClick = useCallback((apt: AppointmentWithDetails) => {
     setSelectedAppointment(apt);
   }, []);
+
+  const handleSlotClick = useCallback((date: string, time: string, doctorId?: string) => {
+    setCreateModal({ date, time, doctorId: doctorId || (doctorFilter || undefined) });
+  }, [doctorFilter]);
 
   const weekDays = ['Дав', 'Мяг', 'Лха', 'Пүр', 'Баа', 'Бям', 'Ням'];
   const monthNames = [
@@ -269,6 +278,17 @@ export default function AppointmentsCalendarPage() {
               </button>
             ))}
           </div>
+
+          {/* New Appointment Button */}
+          <button
+            onClick={() => setCreateModal({})}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blush-500 hover:bg-blush-600 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Шинэ захиалга
+          </button>
         </div>
       </div>
 
@@ -285,6 +305,9 @@ export default function AppointmentsCalendarPage() {
             appointments={appointments}
             onAppointmentClick={handleAppointmentClick}
             onStatusChange={handleStatusChange}
+            doctors={doctors}
+            selectedDoctor={doctorFilter || undefined}
+            onSlotClick={handleSlotClick}
             startHour={8}
             endHour={20}
             slotDuration={30}
@@ -488,6 +511,18 @@ export default function AppointmentsCalendarPage() {
           appointment={selectedAppointment}
           onClose={() => setSelectedAppointment(null)}
           onStatusChange={handleStatusChange}
+        />
+      )}
+
+      {/* Create Appointment Modal */}
+      {createModal && (
+        <CreateAppointmentModal
+          initialDate={createModal.date}
+          initialTime={createModal.time}
+          initialDoctorId={createModal.doctorId}
+          doctors={doctors}
+          onClose={() => setCreateModal(null)}
+          onSuccess={() => { loadAppointments(); }}
         />
       )}
     </div>
