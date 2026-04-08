@@ -442,7 +442,7 @@ const DayColumn = ({
         })}
 
         {/* Appointments */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 z-[15]">
           {positioned.map((apt) => (
             <AppointmentBlock
               key={apt.id}
