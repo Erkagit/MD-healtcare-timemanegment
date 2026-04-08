@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { AppointmentWithDetails } from '@/lib/api';
 
 interface AppointmentDetailModalProps {
   appointment: AppointmentWithDetails;
   onClose: () => void;
   onStatusChange?: (id: string, status: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 const ALL_STATUS_OPTIONS = [
@@ -30,10 +32,24 @@ export default function AppointmentDetailModal({
   appointment,
   onClose,
   onStatusChange,
+  onDelete,
 }: AppointmentDetailModalProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   const handleStatusChange = (newStatus: string) => {
     if (onStatusChange) {
       onStatusChange(appointment.id, newStatus);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    setDeleting(true);
+    try {
+      onDelete(appointment.id);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -200,11 +216,44 @@ export default function AppointmentDetailModal({
           )}
         </div>
 
+        {/* Delete Confirmation */}
+        {showDeleteConfirm && (
+          <div className="px-5 py-3 bg-red-50 border-t border-red-100">
+            <p className="text-xs text-red-700 font-medium mb-2">Энэ захиалгыг бүрмөсөн устгах уу? Энэ үйлдлийг буцаах боломжгүй.</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {deleting ? 'Устгаж байна...' : 'Тийм, устгах'}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors"
+              >
+                Болих
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
-        <div className="modal-footer">
+        <div className="modal-footer flex items-center justify-between">
           <button onClick={onClose} className="btn btn-secondary btn-sm">
             Хаах
           </button>
+          {onDelete && !showDeleteConfirm && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+              </svg>
+              Устгах
+            </button>
+          )}
         </div>
       </div>
     </div>

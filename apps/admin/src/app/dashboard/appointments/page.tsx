@@ -149,6 +149,17 @@ export default function AppointmentsCalendarPage() {
     }
   }, []);
 
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      await appointmentsAPI.delete(id);
+      loadAppointments();
+      setSelectedAppointment(null);
+    } catch (err) {
+      alert('Захиалга устгахад алдаа гарлаа');
+      console.error(err);
+    }
+  }, []);
+
   const navigateMonth = (direction: number) => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1));
     setSelectedDate(null);
@@ -511,6 +522,7 @@ export default function AppointmentsCalendarPage() {
           appointment={selectedAppointment}
           onClose={() => setSelectedAppointment(null)}
           onStatusChange={handleStatusChange}
+          onDelete={handleDelete}
         />
       )}
 

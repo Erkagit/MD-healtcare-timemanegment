@@ -237,6 +237,17 @@ export const appointmentsAPI = {
     if (doctorId) query.set('doctorId', doctorId);
     return fetchAPI<{ success: boolean; data: AppointmentWithDetails[] }>(`/appointments/range?${query.toString()}`);
   },
+
+  delete: (id: string) =>
+    fetchAPI<{ success: boolean; message: string }>(`/admin/appointments/${id}`, {
+      method: 'DELETE',
+    }),
+
+  bulkDelete: (ids: string[]) =>
+    fetchAPI<{ success: boolean; message: string; deletedCount: number }>('/admin/appointments/bulk/delete', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    }),
 };
 
 // Doctors public API (for slot availability)
