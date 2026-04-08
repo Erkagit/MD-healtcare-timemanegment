@@ -8,6 +8,7 @@ import prisma from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { authenticatePatient, authenticateAdmin, optionalAuth } from '../middleware/auth';
 import { DayOfWeek } from '@prisma/client';
+import { backgroundSyncPending } from './payments';
 
 const router = Router();
 
@@ -180,6 +181,9 @@ router.get(
   ],
   async (req, res, next) => {
     try {
+      // Fire-and-forget: check PENDING payments in background
+      backgroundSyncPending().catch(() => {});
+
       const { date, doctorId, status, page = 1, limit = 20 } = req.query;
 
       const where: Record<string, unknown> = {};
@@ -246,6 +250,9 @@ router.get(
       }
 
       const { startDate, endDate, doctorId, status } = req.query;
+
+      // Fire-and-forget: check PENDING payments in background
+      backgroundSyncPending().catch(() => {});
 
       const where: Record<string, unknown> = {
         date: {

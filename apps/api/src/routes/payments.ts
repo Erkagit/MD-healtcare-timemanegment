@@ -16,6 +16,82 @@ const router = Router();
 // ==========================================
 const BOOKING_FEE = 25000; // 25,000₮ show-up fee
 const QR_EXPIRY_MINUTES = 15; // QR code expires in 15 minutes
+const SYNC_THROTTLE_MS = 2 * 60 * 1000; // 2 minutes throttle
+
+// ==========================================
+// BACKGROUND SYNC - Throttled check for PENDING payments
+// Called piggyback-style from other endpoints
+// ==========================================
+let lastSyncTime = 0;
+let syncRunning = false;
+
+export async function backgroundSyncPending(): Promise<void> {
+  const now = Date.now();
+  // Throttle: skip if ran within last 2 minutes or already running
+  if (now - lastSyncTime < SYNC_THROTTLE_MS || syncRunning) return;
+
+  if (!qpay.isConfigured()) return;
+
+  syncRunning = true;
+  lastSyncTime = now;
+
+  try {
+    const pendingPayments = await prisma.payment.findMany({
+      where: {
+        status: 'PENDING',
+        invoiceId: { not: null },
+      },
+      include: { appointment: true },
+      orderBy: { createdAt: 'desc' },
+      take: 10, // small batch for background
+    });
+
+    if (pendingPayments.length === 0) return;
+
+    console.log(`🔄 Background sync: checking ${pendingPayments.length} pending payments...`);
+
+    for (const payment of pendingPayments) {
+      try {
+        // Expire old ones
+        if (payment.expiresAt && payment.expiresAt < new Date()) {
+          await prisma.payment.update({ where: { id: payment.id }, data: { status: 'EXPIRED' } });
+          continue;
+        }
+
+        const qpayStatus = await qpay.checkPayment(payment.invoiceId!);
+        if (qpayStatus.count > 0 && qpayStatus.paid_amount >= payment.amount) {
+          const paidRow = qpayStatus.rows[0];
+          await prisma.$transaction([
+            prisma.payment.update({
+              where: { id: payment.id },
+              data: {
+                status: 'COMPLETED',
+                transactionId: paidRow?.payment_id || null,
+                paidAt: new Date(),
+                metadata: {
+                  ...(payment.metadata as any || {}),
+                  bg_synced: true,
+                  synced_at: new Date().toISOString(),
+                },
+              },
+            }),
+            prisma.appointment.update({
+              where: { id: payment.appointmentId },
+              data: { status: 'CONFIRMED' },
+            }),
+          ]);
+          console.log(`✅ Background sync confirmed payment ${payment.id}`);
+        }
+      } catch (err: any) {
+        console.error(`❌ Background sync failed for ${payment.id}:`, err.message);
+      }
+    }
+  } catch (err: any) {
+    console.error('❌ Background sync error:', err.message);
+  } finally {
+    syncRunning = false;
+  }
+}
 
 // ==========================================
 // POST /api/payments/create-invoice - Generate QR payment for appointment

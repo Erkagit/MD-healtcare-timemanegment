@@ -20,6 +20,7 @@ import paymentRoutes from './routes/payments';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
+import { backgroundSyncPending } from './routes/payments';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -65,6 +66,8 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
+  // Piggyback: sync pending payments on health checks
+  backgroundSyncPending().catch(() => {});
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
