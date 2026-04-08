@@ -16,6 +16,7 @@ const router = Router();
 // ==========================================
 router.post(
   '/',
+  optionalAuth,
   [
     body('doctorId').notEmpty().withMessage('Эмч сонгоно уу'),
     body('date').isISO8601().withMessage('Огноо буруу форматтай'),
@@ -32,7 +33,7 @@ router.post(
         throw new AppError(errors.array()[0].msg, 400);
       }
 
-      const { doctorId, date, time, patientName, patientPhone, patientEmail, serviceId, notes } = req.body;
+      const { doctorId, date, time, patientName, patientPhone, patientEmail, serviceId, notes, skipPayment } = req.body;
       const appointmentDate = new Date(date);
 
       // Validate date is not in the past
@@ -122,6 +123,10 @@ router.post(
         }
       }
 
+      // Determine initial status — admin can skip payment to immediately confirm
+      const isAdminRequest = req.user?.type === 'admin' && skipPayment === true;
+      const appointmentStatus = isAdminRequest ? 'CONFIRMED' : 'PENDING';
+
       // Create appointment
       const appointment = await prisma.appointment.create({
         data: {
@@ -131,7 +136,7 @@ router.post(
           date: appointmentDate,
           time,
           notes,
-          status: 'PENDING',
+          status: appointmentStatus,
         },
         include: {
           doctor: true,
@@ -142,7 +147,9 @@ router.post(
 
       res.status(201).json({
         success: true,
-        message: 'Цаг захиалга амжилттай бүртгэгдлээ',
+        message: appointmentStatus === 'CONFIRMED'
+          ? 'Цаг захиалга амжилттай баталгаажлаа'
+          : 'Цаг захиалга амжилттай бүртгэгдлээ',
         data: appointment,
       });
     } catch (error) {
@@ -353,9 +360,19 @@ router.patch(
       }
 
       // ── Valid state transition enforcement ──
-      // CONFIRMED автоматаар төлбөр төлөгдөхөд болно, админ гараар хийх боломжгүй
+      // CONFIRMED: Allow admin to manually confirm if there is a completed payment
+      // or if there is no payment at all (admin-created appointment)
       if (status === 'CONFIRMED') {
-        throw new AppError('Захиалга төлбөр төлөгдөхөд автоматаар баталгаажна. Гараар баталгаажуулах шаардлагагүй.', 400);
+        const hasCompletedPayment = current.payments?.some((p) => p.status === 'COMPLETED');
+        const hasPendingPayment = current.payments?.some((p) => p.status === 'PENDING');
+
+        if (hasPendingPayment && !hasCompletedPayment) {
+          throw new AppError(
+            'Захиалга төлбөр төлөгдөхөд автоматаар баталгаажна. Эсвэл "Гараар баталгаажуулах" ашиглана уу.',
+            400
+          );
+        }
+        // Allow if completed payment exists or no payment at all — fall through to update
       }
 
       // COMPLETED зөвхөн CONFIRMED статусаас

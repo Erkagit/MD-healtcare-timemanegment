@@ -218,6 +218,12 @@ export const appointmentsAPI = {
     }>(`/appointments${queryString ? `?${queryString}` : ''}`);
   },
 
+  create: (data: CreateAppointmentInput) =>
+    fetchAPI<{ success: boolean; data: AppointmentWithDetails; message: string }>('/appointments', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
   updateStatus: (id: string, status: string) =>
     fetchAPI<{ success: boolean; data: AppointmentWithDetails }>(`/appointments/${id}/status`, {
       method: 'PATCH',
@@ -231,6 +237,12 @@ export const appointmentsAPI = {
     if (doctorId) query.set('doctorId', doctorId);
     return fetchAPI<{ success: boolean; data: AppointmentWithDetails[] }>(`/appointments/range?${query.toString()}`);
   },
+};
+
+// Doctors public API (for slot availability)
+export const doctorsAPI = {
+  getSlots: (doctorId: string, date: string) =>
+    fetchAPI<{ success: boolean; data: { date: string; doctorId: string; slots: { time: string; available: boolean }[] } }>(`/doctors/${doctorId}/slots?date=${date}`),
 };
 
 // Payment APIs
@@ -430,6 +442,18 @@ export interface AppointmentFilters {
   status?: string;
   page?: number;
   limit?: number;
+}
+
+export interface CreateAppointmentInput {
+  doctorId: string;
+  serviceId?: string;
+  date: string;
+  time: string;
+  patientName: string;
+  patientPhone: string;
+  patientEmail?: string;
+  notes?: string;
+  skipPayment?: boolean;
 }
 
 // Service Types
